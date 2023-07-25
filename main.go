@@ -5,6 +5,6 @@ import (
 )
 
 func main() {
-	avahi.PublishCNAME("test.local")
+	avahi.PublishCNAME("test")
 	// cmd.Execute()
 }
