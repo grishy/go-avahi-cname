@@ -37,7 +37,7 @@ func main() {
 	}
 
 	resendDuration := time.Duration(TTL/2) * time.Second
-	log.Printf("Publishing every %v ans CNAME TTL=%ds.", resendDuration, TTL)
+	log.Printf("Publishing every %v and CNAME TTL=%ds.", resendDuration, TTL)
 
 	// To start publishing immediately
 	// https://github.com/golang/go/issues/17601
