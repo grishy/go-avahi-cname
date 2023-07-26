@@ -6,9 +6,12 @@ builds:
   # https://goreleaser.com/customization/build/
   - env:
       - CGO_ENABLED=0
+    flags:
+      - -trimpath
+    ldflags:
+      - -w -s
     goos:
       - linux
-      - freebsd
       - darwin
     goarch:
       - amd64
@@ -18,18 +21,10 @@ builds:
       - "6"
       - "7"
     mod_timestamp: "{{ .CommitTimestamp }}"
-    ldflags:
-      - -w -s
 
 archives:
   - format: tar.gz
-    name_template: >-
-      {{ .ProjectName }}_
-      {{- title .Os }}_
-      {{- if eq .Arch "amd64" }}x86_64
-      {{- else if eq .Arch "386" }}i386
-      {{- else }}{{ .Arch }}{{ end }}
-      {{- if .Arm }}v{{ .Arm }}{{ end }}
+    name_template: "{{ .ProjectName }}_v{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}"
 
 checksum:
   name_template: "checksums.txt"
@@ -45,7 +40,7 @@ dockers:
     use: buildx
     build_flag_templates:
       - "--pull"
-      - "--platform=linux/amd64,linux/arm64,linux/riscv64,"
+      - "--platform=linux/amd64,linux/arm64,linux/arm/v7"
 
 changelog:
   sort: asc
