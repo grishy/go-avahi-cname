@@ -39,8 +39,8 @@ dockers:
       - "ghcr.io/grishy/go-avahi-cname:{{ .Tag }}"
     use: buildx
     build_flag_templates:
-      - "--pull"
-      - "--platform=linux/amd64,linux/arm64,linux/arm/v7"
+      - "--push"
+      - "--platform=linux/amd64"
 
 changelog:
   sort: asc
