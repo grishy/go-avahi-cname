@@ -19,9 +19,9 @@ jobs:
 
       - run: git fetch --force --tags
 
-      - # Add support for more platforms with QEMU (optional)
+        # Add support for more platforms with QEMU (optional)
         # https://github.com/docker/setup-qemu-action
-        name: Set up QEMU
+      - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
 
       - name: Set up Docker Buildx
@@ -31,6 +31,29 @@ jobs:
         with:
           go-version: "1.20"
 
+      - name: Log in to the Container registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: |
+            ghcr.io/${{ github.repository }}
+
+      - name: Build and push Docker images
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          push: true
+          platforms: linux/amd64,linux/arm64
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
       - uses: goreleaser/goreleaser-action@v4
         with:
           distribution: goreleaser
@@ -38,11 +61,3 @@ jobs:
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build and push
-        uses: docker/build-push-action@v4
-        with:
-          context: .
-          platforms: linux/amd64,linux/arm64
-          push: true
-          tags: ghcr.io/grishy/go-avahi-cname:latest
