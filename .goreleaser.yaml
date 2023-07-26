@@ -12,9 +12,10 @@ builds:
       - linux
       - darwin
     goarch:
-      - amd64
-      - arm
-      - arm64
+      - "386"
+      - "amd64"
+      - "arm"
+      - "arm64"
     goarm:
       - "6"
       - "7"
@@ -34,7 +35,7 @@ release:
   target_commitish: "{{ .Commit }}"
   mode: replace
   header: |
-    ## ⚙️ The `{{ .Tag }}` release
+    ## ℹ️ For information on how to install and use please see `README.md`
   footer: |
     Your PRs & issues are welcome! Thanks 😉
   disable: false
