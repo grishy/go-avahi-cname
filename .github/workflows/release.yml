@@ -17,6 +17,8 @@ jobs:
         with:
           fetch-depth: 0
 
+      - run: git fetch --force --tags
+
       - # Add support for more platforms with QEMU (optional)
         # https://github.com/docker/setup-qemu-action
         name: Set up QEMU
@@ -25,14 +27,10 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
-      - run: git fetch --force --tags
-
       - uses: actions/setup-go@v4
         with:
           go-version: "1.20"
 
-      # More assembly might be required: Docker logins, GPG, etc. It all depends
-      # on your needs.
       - uses: goreleaser/goreleaser-action@v4
         with:
           distribution: goreleaser
@@ -40,3 +38,11 @@ jobs:
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ghcr.io/grishy/go-avahi-cname:latest
