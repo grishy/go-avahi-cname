@@ -32,15 +32,6 @@ checksum:
 snapshot:
   name_template: "{{ incpatch .Version }}-next"
 
-# create a docker image
-# https://goreleaser.com/customization/docker
-dockers:
-  - image_templates:
-      - "ghcr.io/grishy/go-avahi-cname:{{ .Tag }}"
-    use: buildx
-    build_flag_templates:
-      - "--push"
-      - "--platform=linux/amd64"
 
 changelog:
   sort: asc
