@@ -1,7 +1,5 @@
-before:
-  # https://goreleaser.com/customization/hooks/
-  hooks:
-    - go mod tidy
+report_sizes: true
+
 builds:
   # https://goreleaser.com/customization/build/
   - env:
@@ -23,19 +21,25 @@ builds:
     mod_timestamp: "{{ .CommitTimestamp }}"
 
 archives:
+  # https://goreleaser.com/customization/archive/
   - format: tar.gz
     name_template: "{{ .ProjectName }}_v{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}"
 
 checksum:
+  # https://goreleaser.com/customization/checksum/
   name_template: "checksums.txt"
 
-snapshot:
-  name_template: "{{ incpatch .Version }}-next"
-
+release:
+  # https://goreleaser.com/customization/release/
+  target_commitish: "{{ .Commit }}"
+  mode: replace
+  header: |
+    ## ⚙️ The `{{ .Tag }}` release
+  footer: |
+    Your PRs & issues are welcome! Thanks 😉
+  disable: false
+  skip_upload: false
 
 changelog:
+  # https://goreleaser.com/customization/changelog/
   sort: asc
-  filters:
-    exclude:
-      - "^docs:"
-      - "^test:"

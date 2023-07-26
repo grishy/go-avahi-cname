@@ -56,7 +56,6 @@ func PublishCNAME(cnames []string) {
 			}
 
 			cnameFull := cname + "." + fqdnFull
-
 			err := group.AddRecord(
 				avahi.InterfaceUnspec,
 				avahi.ProtoUnspec,
