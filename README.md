@@ -4,28 +4,33 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/grishy/go-avahi-cname)](https://goreportcard.com/report/github.com/grishy/go-avahi-cname)
 ![Build Status](https://github.com/grishy/go-avahi-cname/actions/workflows/release.yml/badge.svg)
 
-## About go-avahi-cname
+## What is go-avahi-cname?
 
-This project publishe CNAME records pointing to the local host over multicast DNS using the **Avahi** daemon found in all major Linux distributions.
-Since Avahi is compatible with Apple's Bonjour, these names are usable from MacOS X and Windows too.
+It is a simple and lightweight project that allows you to publish CNAME records pointing to the local host over multicast DNS using the **Avahi** daemon, which is widely available in most Linux distributions. This means that you can access your local host using different names from any device on the same network, as long as they support Apple’s Bonjour protocol, which is compatible with Avahi.
 
 ### Goals
 
-- ✅ No dependencies
-- ✅ Small footprint, less than 3MB binary
-- ✅ Support x86_64 and ARM
-- ✅ Release binaries and containers
+Here are some of the benefits of using go-avahi-cname:
 
-### Architecture
+- ✅ No dependencies: You only need the Avahi daemon running on your host, no other libraries or packages are required.
+- ✅ Small footprint: The binary size is less than 3MB, and it consumes minimal resources while running.
+- ✅ Support x86_64 and ARM: You can use go-avahi-cname on different architectures, such as Intel or Raspberry Pi.
+- ✅ Release binaries and containers: You can download the pre-built binaries or use the Docker images for each version.
+
+### How does it work?
+
+The following diagram shows the basic architecture of go-avahi-cname:
 
 ![Architecture](./docs/arch.excalidraw.svg)
 
-## Usege and installation
+As you can see, _go-avahi-cname_ communicates with the Avahi daemon via DBus, and publishes the CNAME records that you specify as arguments. The Avahi daemon then broadcasts these records over multicast DNS, so that other devices on the same network can resolve them.
 
-All CNAMEs are specified as program arguments, no length limit.  
+## How to use and install?
+
+You can specify any number of CNAMEs as arguments when running go-avahi-cname, with no length limit.
 You can use either just the name (`name1`), which will create a record as a subdomain for the current machine, or you can write the full FQDN (`name1.hostname.local.` domain with a dot on the end) format.
 
-Example output on machine with hostname `lab`:
+For example, if your machine’s hostname is lab, you can run:
 
 ```plain
 > ./go-avahi-cname git photo.local. example.lab.local.
@@ -39,7 +44,17 @@ Example output on machine with hostname `lab`:
 2023/07/27 08:37:16 Closing publisher...
 ```
 
-### Installation
+This will create three CNAME records pointing to your local host:
+
+- `git.lab.local.`
+- `photo.local.`
+- `example.lab.local.`
+
+You can then access your local host using any of these names from other devices on the same network.
+
+### Installation options
+
+There are two ways to install and run go-avahi-cname:
 
 #### Binary
 
