@@ -6,17 +6,21 @@
 
 ## About
 
-## Install
+### Architecture
+
+![Architecture](./docs/arch.excalidraw.svg)
+
+## Install and usage
+
+```bash
+$ ./go-avahi-cname git.hostname.local [drone.hostname.local] [photo.hostname.local] [code.hostname.local]
+```
 
 ## Source of inspiration
 
 - https://gist.github.com/gdamjan/3168336
-- https://github.com/tomoasleep/k8s-avahi
-
-## TODO
-
-- [ ] Add FreeBSD support (https://github.com/godbus/dbus/issues/315)
 
 ## License
-Copyright © 2022 [Sergei G.](https://github.com/grishy).
+
+Copyright © 2022 [Sergei G.](https://github.com/grishy).  
 This project is [MIT](./LICENSE) licensed.
