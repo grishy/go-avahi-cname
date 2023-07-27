@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
@@ -11,7 +12,7 @@ import (
 	"github.com/miekg/dns"
 )
 
-const TTL = uint32(60 * 10) // in seconds
+const TTL = uint32(10 * 60) // in seconds
 
 func formatCname(hostnameFqdn string, cnames []string) []string {
 	log.Println("Formating CNAMEs:")
@@ -47,6 +48,7 @@ func publishing(ctx context.Context, publisher *publisher.Publisher, cnames []st
 				log.Fatalf("can't publish CNAMEs: %v", err)
 			}
 		case <-ctx.Done():
+			fmt.Println()
 			log.Println("Closing publisher...")
 			if err := publisher.Close(); err != nil {
 				log.Fatalf("Can't close publisher: %v", err)
