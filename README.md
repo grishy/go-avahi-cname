@@ -99,5 +99,5 @@ Ansible task to run the container:
 
 ## License
 
-Copyright © 2022 [Sergei G.](https://github.com/grishy)  
+Copyright © 2023 [Sergei G.](https://github.com/grishy)  
 This project is [MIT](./LICENSE) licensed.
