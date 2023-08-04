@@ -12,10 +12,12 @@ It is a simple and lightweight project that allows you to publish CNAME records 
 
 Here are some of the benefits of using go-avahi-cname:
 
-- ✅ No dependencies: You only need the Avahi daemon running on your host, no other libraries or packages are required.
-- ✅ Small footprint: The binary size is less than 3MB, and it consumes minimal resources while running.
-- ✅ Support x86_64 and ARM: You can use go-avahi-cname on different architectures, such as Intel or Raspberry Pi.
-- ✅ Release binaries and containers: You can download the pre-built binaries or use the Docker images for each version.
+- **✅ No dependencies**   
+   You only need the Avahi daemon running on your host, no other libraries or packages are required.
+- **✅ Small footprint**   
+   The binary size is less than 3MB, and it consumes minimal resources while running.
+- **✅ Support x86_64 and ARM**  
+- **✅ Release binaries and containers**   
 
 ### How does it work?
 
