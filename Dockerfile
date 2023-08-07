@@ -15,4 +15,5 @@ RUN go build -ldflags="-w -s" -o /go-avahi-cname
 # STAGE 2: build the container to run
 FROM scratch
 COPY --from=builder /go-avahi-cname /go-avahi-cname
+EXPOSE 5353/udp
 ENTRYPOINT ["/go-avahi-cname"]
