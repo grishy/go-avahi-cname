@@ -3,6 +3,7 @@ module github.com/grishy/go-avahi-cname
 go 1.20
 
 require (
+	github.com/carlmjohnson/versioninfo v0.22.5
 	github.com/godbus/dbus/v5 v5.1.0
 	github.com/holoplot/go-avahi v1.0.1
 	github.com/miekg/dns v1.1.55

@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"os"
 	"time"
 
 	"github.com/grishy/go-avahi-cname/publisher"
@@ -19,7 +18,7 @@ func formatCname(hostnameFqdn string, cnames []string) []string {
 		if !dns.IsFqdn(cname) {
 			cnames[i] = dns.Fqdn(cname + "." + hostnameFqdn)
 
-			log.Printf("  > '%s' (added current FQDN)", cnames[i])
+			log.Printf("  > '%s' (added FQDN)", cnames[i])
 			continue
 		}
 
@@ -29,41 +28,58 @@ func formatCname(hostnameFqdn string, cnames []string) []string {
 	return cnames
 }
 
-func publishing(ctx context.Context, publisher *publisher.Publisher, ttl, interval uint32, cnames []string) {
+func publishing(ctx context.Context, publisher *publisher.Publisher, cnames []string, ttl, interval uint32) error {
+	log.Printf("Publishing every %ds and CNAME TTL %ds", interval, ttl)
+
 	resendDuration := time.Duration(interval) * time.Second
-	log.Printf("Publishing every %v and CNAME TTL=%ds.", resendDuration, ttl)
+	ticker := time.NewTicker(resendDuration)
+	defer ticker.Stop()
 
 	// To start publishing immediately
 	// https://github.com/golang/go/issues/17601
 	if err := publisher.PublishCNAMES(cnames, ttl); err != nil {
-		log.Fatalf("can't publish CNAMEs: %v", err)
+		return fmt.Errorf("can't publish CNAMEs: %w", err)
 	}
 
 	for {
 		select {
-		case <-time.Tick(resendDuration):
+		case <-ticker.C:
 			if err := publisher.PublishCNAMES(cnames, ttl); err != nil {
-				log.Fatalf("can't publish CNAMEs: %v", err)
+				return fmt.Errorf("can't publish CNAMEs: %w", err)
 			}
 		case <-ctx.Done():
-			fmt.Println()
+			fmt.Println() // Add new line after ^C
 			log.Println("Closing publisher...")
 			if err := publisher.Close(); err != nil {
-				log.Fatalf("Can't close publisher: %v", err)
+				return fmt.Errorf("can't close publisher: %w", err)
 			}
-			os.Exit(0)
+			return nil
 		}
 	}
 }
 
-func cnameCmd(ctx context.Context, ttl, interval uint32, cnames []string) {
+func runCname(ctx context.Context, cnames []string, fqdn string, ttl, interval uint32) error {
+	log.Println("Creating publisher")
+	publisher, err := publisher.NewPublisher()
+	if err != nil {
+		return fmt.Errorf("can't create publisher: %w", err)
+	}
 
+	if fqdn == "" {
+		log.Println("Getting FQDN from Avahi")
+		fqdn = publisher.Fqdn()
+	}
+
+	log.Printf("FQDN: %s", fqdn)
+
+	formattedCname := formatCname(fqdn, cnames)
+	return publishing(ctx, publisher, formattedCname, ttl, interval)
 }
 
 func CmdCname(ctx context.Context) *cli.Command {
 	return &cli.Command{
 		Name:  "cname",
-		Usage: "anonse CNAME via Avahi",
+		Usage: "Anounce CNAME records for current host via Avahi. Require DBus connection to Avahi daemon.",
 		Flags: []cli.Flag{
 			&cli.UintFlag{
 				Name:    "ttl",
@@ -75,27 +91,26 @@ func CmdCname(ctx context.Context) *cli.Command {
 				Name:    "interval",
 				Value:   300,
 				EnvVars: []string{"CNAME_INTERVAL"},
-				Usage:   "Interval of sending CNAME record in seconds",
+				Usage:   "Interval of publishing CNAME records in seconds",
+			},
+			&cli.StringFlag{
+				Name:        "fqdn",
+				EnvVars:     []string{"SUBDOMAIN_FQDN"},
+				Usage:       "FQDN which will be used for CNAME. If empty, will be used current FQDN",
+				DefaultText: "hostname.local.",
 			},
 		},
 		Action: func(cCtx *cli.Context) error {
 			ttl := uint32(cCtx.Uint("ttl"))
 			interval := uint32(cCtx.Uint("interval"))
+			fqdn := cCtx.String("fqdn")
 			cnames := cCtx.Args().Slice()
 
 			if len(cnames) == 0 {
-				log.Fatal("CNAMEs are not specified")
+				return fmt.Errorf("at least one CNAME should be provided")
 			}
 
-			log.Println("Creating publisher")
-			publisher, err := publisher.NewPublisher()
-			if err != nil {
-				log.Fatalf("Can't create publisher: %v", err)
-			}
-
-			formattedCname := formatCname(publisher.Fqdn(), cnames)
-			publishing(ctx, publisher, ttl, interval, formattedCname)
-			return nil
+			return runCname(ctx, cnames, fqdn, ttl, interval)
 		},
 	}
 }
