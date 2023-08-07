@@ -2,21 +2,23 @@ package main
 
 import (
 	"context"
-	"log"
+	"fmt"
 	"os"
 	"os/signal"
 
+	"github.com/carlmjohnson/versioninfo"
 	"github.com/grishy/go-avahi-cname/cmd"
 	"github.com/urfave/cli/v2"
 )
 
 func main() {
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, os.Kill)
 	defer stop()
 
 	app := &cli.App{
-		Name:  "go-avahi-cname",
-		Usage: "make an explosive entrance",
+		Name:    "go-avahi-cname",
+		Usage:   "Additional functionality for Avahi's mDNS responder",
+		Version: versioninfo.Short(),
 		Commands: []*cli.Command{
 			cmd.CmdCname(ctx),
 			cmd.CmdSubdomain(ctx),
@@ -24,6 +26,7 @@ func main() {
 	}
 
 	if err := app.Run(os.Args); err != nil {
-		log.Fatal(err)
+		fmt.Println("Error:")
+		fmt.Printf(" > %+v\n", err)
 	}
 }
