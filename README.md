@@ -12,12 +12,12 @@ It is a simple and lightweight project that allows you to publish CNAME records 
 
 Here are some of the benefits of using go-avahi-cname:
 
-- **✅ No dependencies**   
+- **✅ No dependencies**  
    You only need the Avahi daemon running on your host, no other libraries or packages are required.
-- **✅ Small footprint**   
+- **✅ Small footprint**  
    The binary size is less than 3MB, and it consumes minimal resources while running.
-- **✅ Support x86_64 and ARM**  
-- **✅ Release binaries and containers**   
+- **✅ Support x86_64 and ARM**
+- **✅ Release binaries and containers**
 
 ### How does it work?
 
@@ -96,6 +96,7 @@ Ansible task to run the container:
 
 ## Source of inspiration
 
+- https://github.com/nfam/mdns-subdomain/tree/master - I used this approach for version 2.
 - https://web.archive.org/web/20151016190620/http://www.avahi.org/wiki/Examples/PythonPublishAlias
 - https://pypi.org/project/mdns-publisher/
 
