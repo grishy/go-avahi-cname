@@ -4,28 +4,103 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/grishy/go-avahi-cname)](https://goreportcard.com/report/github.com/grishy/go-avahi-cname)
 ![Build Status](https://github.com/grishy/go-avahi-cname/actions/workflows/release.yml/badge.svg)
 
-## What is go-avahi-cname?
+# What is go-avahi-cname?
 
 It is a simple and lightweight project that allows you to publish CNAME records pointing to the local host over multicast DNS using the **Avahi** daemon, which is widely available in most Linux distributions. This means that you can access your local host using different names from any device on the same network, as long as they support Apple’s Bonjour protocol, which is compatible with Avahi.
 
-### Goals
+## TLDR
+
+Forward all subdomains from machine to machine( `*.hostname.local` -> `hostname.local`)
+
+1. _Binary_ `./go-avahi-cname subdomain`
+2. _Docker_ `docker run -d -v "/var/run/dbus/system_bus_socket:/var/run/dbus/system_bus_socket" ghcr.io/grishy/go-avahi-cname:v2.0.0`
+
+## Modes
+
+- **Subdomain reply** - _I think you want this._ We listen to the traffic and if someone asks `*.hostname.local` (example: `name1.hostname.local`), we "redirect" to `hostname.local`.
+- **Interval publishing** - With some frequency, we send out information about all `name1.hostname.local`, `name2.hostname.local`...
+
+## Goals
 
 Here are some of the benefits of using go-avahi-cname:
 
 - **✅ No dependencies**  
    You only need the Avahi daemon running on your host, no other libraries or packages are required.
-- **✅ Small footprint**  
-   The binary size is less than 3MB, and it consumes minimal resources while running.
+- **✅ Small footprint**
 - **✅ Support x86_64 and ARM**
-- **✅ Release binaries and containers**
+- **✅ Install as binaries or containers**
 
-### How does it work?
+---
 
-The following diagram shows the basic architecture of go-avahi-cname:
+# How does it work?
 
-![Architecture](./docs/arch.excalidraw.svg)
+_go-avahi-cname_ communicates with the Avahi daemon via DBus, and publishes the CNAME records. Different modes are only the way of how we select records to publish. The Avahi daemon then broadcasts these records over multicast DNS, so that other devices on the same network can resolve them.
 
-As you can see, _go-avahi-cname_ communicates with the Avahi daemon via DBus, and publishes the CNAME records that you specify as arguments. The Avahi daemon then broadcasts these records over multicast DNS, so that other devices on the same network can resolve them.
+## Subdomain CNAME reply
+
+![Architecture](./docs/arch_subdomain.excalidraw.svg)
+
+```plain
+> ./go-avahi-cname subdomain -h
+NAME:
+   go-avahi-cname subdomain - Listen for all queries and publish CNAMEs for subdomains
+
+USAGE:
+   go-avahi-cname subdomain [command options] [arguments...]
+
+OPTIONS:
+   --ttl value   TTL of CNAME record in seconds (default: 600) [$TTL]
+   --fqdn value  FQDN which will be used for CNAME. If empty, will be used current FQDN (default: hostname.local.) [$FQDN]
+   --help, -h    show help
+```
+
+In this variant, we listen to the traffic with avahi-daemon for all questions with names and if they match ours, we send a command to avahi to answer it (send CNAME). The standard can be run without parameters, then we will resolve all requests that contain our hostname. For example, `git.lab.local` will be redirected to `lab.local`
+
+## Interval publishing of CNAME records
+
+![Architecture](./docs/arch_cname.excalidraw.svg)
+
+As you can see, _go-avahi-cname_ communicates with the Avahi daemon via DBus, and publishes the CNAME records that you specify as arguments.
+
+```plain
+> ./go-avahi-cname cname -h
+NAME:
+   go-avahi-cname cname - Announce CNAME records for host via avahi-daemon
+
+USAGE:
+   go-avahi-cname cname [command options] [arguments...]
+
+OPTIONS:
+   --ttl value       TTL of CNAME record in seconds. How long they will be valid. (default: 600) [$TTL]
+   --interval value  Interval of publishing CNAME records in seconds. How often to send records to other machines. (default: 300) [$INTERVAL]
+   --fqdn value      Where to redirect. If empty, the Avahi FQDN (current machine) will be used (default: hostname.local.) [$FQDN]
+   --help, -h        show help
+```
+
+You can specify any number of CNAMEs as arguments when running go-avahi-cname, with no length limit.
+You can use either just the name (`name1`), which will create a record as a subdomain for the current machine, or you can write the full FQDN (`name1.hostname.local.` domain with a dot on the end) format.
+
+For example, if your machine’s hostname is lab, you can run:
+
+```plain
+> ./go-avahi-cname cname git photo.local. example.lab.local.
+2023/08/08 14:51:21 Creating publisher
+2023/08/08 14:51:21 Getting FQDN from Avahi
+2023/08/08 14:51:21 FQDN: lab.local.
+2023/08/08 14:51:21 Formatting CNAMEs:
+2023/08/08 14:51:21   > 'git.lab.local.' (added FQDN)
+2023/08/08 14:51:21   > 'photo.local.'
+2023/08/08 14:51:21   > 'example.lab.local.'
+2023/08/08 14:51:21 Publishing every 300s and CNAME TTL 600s
+```
+
+This will create three CNAME records pointing to your local host:
+
+- `git.lab.local.`
+- `photo.local.`
+- `example.lab.local.`
+
+You can then access your local host using any of these names from other devices on the same network.
 
 ## How to use and install?
 
