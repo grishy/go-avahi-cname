@@ -22,20 +22,21 @@ type Publisher struct {
 	rdataField  []byte
 }
 
+// NewPublisher creates a new service for Publisher.
 func NewPublisher() (*Publisher, error) {
 	conn, err := dbus.SystemBus()
 	if err != nil {
-		return nil, fmt.Errorf("can't connect to system bus: %v", err)
+		return nil, fmt.Errorf("failed to connect to system bus: %v", err)
 	}
 
 	server, err := avahi.ServerNew(conn)
 	if err != nil {
-		return nil, fmt.Errorf("can't create Avahi server: %v", err)
+		return nil, fmt.Errorf("failed to create Avahi server: %v", err)
 	}
 
 	avahiFqdn, err := server.GetHostNameFqdn()
 	if err != nil {
-		return nil, fmt.Errorf("can't get FQDN from Avahi: %v", err)
+		return nil, fmt.Errorf("failed to get FQDN from Avahi: %v", err)
 	}
 
 	fqdn := dns.Fqdn(avahiFqdn)
@@ -45,7 +46,7 @@ func NewPublisher() (*Publisher, error) {
 	rdataField := make([]byte, len(fqdn)+1)
 	_, err = dns.PackDomainName(fqdn, rdataField, 0, nil, false)
 	if err != nil {
-		return nil, fmt.Errorf("can't pack FQDN into RDATA: %v", err)
+		return nil, fmt.Errorf("failed to pack FQDN into RDATA: %v", err)
 	}
 
 	return &Publisher{
@@ -56,14 +57,16 @@ func NewPublisher() (*Publisher, error) {
 	}, nil
 }
 
+// Fqdn returns the fully qualified domain name from Avahi.
 func (p *Publisher) Fqdn() string {
 	return p.fqdn
 }
 
+// PublishCNAMES send via Avahi-daemon CNAME records with the provided TTL.
 func (p *Publisher) PublishCNAMES(cnames []string, ttl uint32) error {
 	group, err := p.avahiServer.EntryGroupNew()
 	if err != nil {
-		return fmt.Errorf("can't create entry group: %v", err)
+		return fmt.Errorf("failed to create entry group: %v", err)
 	}
 
 	for _, cname := range cnames {
@@ -78,17 +81,18 @@ func (p *Publisher) PublishCNAMES(cnames []string, ttl uint32) error {
 			p.rdataField,
 		)
 		if err != nil {
-			return fmt.Errorf("can't add record to entry group: %v", err)
+			return fmt.Errorf("failed to add record to entry group: %v", err)
 		}
 	}
 
 	if err := group.Commit(); err != nil {
-		return fmt.Errorf("can't commit entry group: %v", err)
+		return fmt.Errorf("failed to commit entry group: %v", err)
 	}
 
 	return nil
 }
 
+// Close associated resources.
 func (p *Publisher) Close() {
 	p.avahiServer.Close() // It also close the DBus connection
 }

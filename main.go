@@ -17,7 +17,7 @@ func main() {
 
 	app := &cli.App{
 		Name:    "go-avahi-cname",
-		Usage:   "Additional functionality for Avahi's mDNS responder",
+		Usage:   "A tool for publishing CNAME records with Avahi",
 		Version: versioninfo.Short(),
 		Commands: []*cli.Command{
 			cmd.CmdCname(ctx),

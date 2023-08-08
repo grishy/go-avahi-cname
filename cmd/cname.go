@@ -11,23 +11,25 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
+// formatCname formats CNAMEs by ensuring they are fully qualified domain names (FQDNs).
 func formatCname(hostnameFqdn string, cnames []string) []string {
-	log.Println("Formating CNAMEs:")
+	log.Println("Formatting CNAMEs:")
 
+	formattedCnames := make([]string, len(cnames))
 	for i, cname := range cnames {
 		if !dns.IsFqdn(cname) {
-			cnames[i] = dns.Fqdn(cname + "." + hostnameFqdn)
-
-			log.Printf("  > '%s' (added FQDN)", cnames[i])
-			continue
+			formattedCnames[i] = dns.Fqdn(cname + "." + hostnameFqdn)
+			log.Printf("  > '%s' (added FQDN)", formattedCnames[i])
+		} else {
+			formattedCnames[i] = cname
+			log.Printf("  > '%s'", cname)
 		}
-
-		log.Printf("  > '%s'", cname)
 	}
 
-	return cnames
+	return formattedCnames
 }
 
+// publishLoop handles the continuous publishing of CNAME records.
 func publishing(ctx context.Context, publisher *avahi.Publisher, cnames []string, ttl, interval uint32) error {
 	log.Printf("Publishing every %ds and CNAME TTL %ds", interval, ttl)
 
@@ -35,17 +37,17 @@ func publishing(ctx context.Context, publisher *avahi.Publisher, cnames []string
 	ticker := time.NewTicker(resendDuration)
 	defer ticker.Stop()
 
-	// To start publishing immediately
+	// Publish immediately
 	// https://github.com/golang/go/issues/17601
 	if err := publisher.PublishCNAMES(cnames, ttl); err != nil {
-		return fmt.Errorf("can't publish CNAMEs: %w", err)
+		return fmt.Errorf("failed to publish CNAMEs: %w", err)
 	}
 
 	for {
 		select {
 		case <-ticker.C:
 			if err := publisher.PublishCNAMES(cnames, ttl); err != nil {
-				return fmt.Errorf("can't publish CNAMEs: %w", err)
+				return fmt.Errorf("failed to publish CNAMEs: %w", err)
 			}
 		case <-ctx.Done():
 			fmt.Println() // Add new line after ^C
@@ -56,6 +58,7 @@ func publishing(ctx context.Context, publisher *avahi.Publisher, cnames []string
 	}
 }
 
+// runCname sets up and starts the CNAME publishing process.
 func runCname(ctx context.Context, publisher *avahi.Publisher, cnames []string, fqdn string, ttl, interval uint32) error {
 	log.Printf("FQDN: %s", fqdn)
 
@@ -66,24 +69,24 @@ func runCname(ctx context.Context, publisher *avahi.Publisher, cnames []string, 
 func CmdCname(ctx context.Context) *cli.Command {
 	return &cli.Command{
 		Name:  "cname",
-		Usage: "Anounce CNAME records for host via avahi-daemon",
+		Usage: "Announce CNAME records for host via avahi-daemon",
 		Flags: []cli.Flag{
 			&cli.UintFlag{
 				Name:    "ttl",
 				Value:   600,
-				EnvVars: []string{"CNAME_TTL"},
-				Usage:   "TTL of CNAME record in seconds. How long will they be valid.",
+				EnvVars: []string{"TTL"},
+				Usage:   "TTL of CNAME record in seconds. How long they will be valid.",
 			},
 			&cli.UintFlag{
 				Name:    "interval",
 				Value:   300,
-				EnvVars: []string{"CNAME_INTERVAL"},
+				EnvVars: []string{"INTERVAL"},
 				Usage:   "Interval of publishing CNAME records in seconds. How often to send records to other machines.",
 			},
 			&cli.StringFlag{
 				Name:        "fqdn",
-				EnvVars:     []string{"SUBDOMAIN_FQDN"},
-				Usage:       "Where to redirect. If empty, will be used avahi FQDN (current machine).",
+				EnvVars:     []string{"FQDN"},
+				Usage:       "Where to redirect. If empty, the Avahi FQDN (current machine) will be used",
 				DefaultText: "hostname.local.",
 			},
 		},
@@ -100,7 +103,7 @@ func CmdCname(ctx context.Context) *cli.Command {
 			log.Println("Creating publisher")
 			publisher, err := avahi.NewPublisher()
 			if err != nil {
-				return fmt.Errorf("can't create publisher: %w", err)
+				return fmt.Errorf("failed to create publisher: %w", err)
 			}
 
 			if fqdn == "" {
