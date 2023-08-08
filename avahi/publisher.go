@@ -1,4 +1,4 @@
-package publisher
+package avahi
 
 import (
 	"fmt"
@@ -89,7 +89,6 @@ func (p *Publisher) PublishCNAMES(cnames []string, ttl uint32) error {
 	return nil
 }
 
-func (p *Publisher) Close() error {
-	p.avahiServer.Close()
-	return p.dbusConn.Close()
+func (p *Publisher) Close() {
+	p.avahiServer.Close() // It also close the DBus connection
 }
