@@ -138,6 +138,7 @@ Ansible task to run the container:
     name: "go-avahi-cname"
     image: "ghcr.io/grishy/go-avahi-cname:v2.0.0"
     restart_policy: unless-stopped
+    network_mode: host
     volumes:
       - "/var/run/dbus/system_bus_socket:/var/run/dbus/system_bus_socket" # access to avahi-daemon
 ```
