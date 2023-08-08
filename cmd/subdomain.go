@@ -13,6 +13,12 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
+type dnsMsg struct {
+	msg dns.Msg
+	err error
+}
+
+// listen creates a UDP connection to multicast for listening to DNS messages.
 func listen() (*net.UDPConn, error) {
 	addr := &net.UDPAddr{
 		IP:   net.ParseIP("224.0.0.251"),
@@ -27,11 +33,7 @@ func listen() (*net.UDPConn, error) {
 	return conn, nil
 }
 
-type dnsMsg struct {
-	msg dns.Msg
-	err error
-}
-
+// reader reads DNS messages from the UDP connection. Assume that context is canceled before closing the connection.
 func reader(ctx context.Context, conn *net.UDPConn) chan *dnsMsg {
 	buf := make([]byte, 1500)
 
@@ -51,13 +53,13 @@ func reader(ctx context.Context, conn *net.UDPConn) chan *dnsMsg {
 					return
 				}
 
-				dnsMsg.err = errors.Join(dnsMsg.err, fmt.Errorf("can't read from UDP from %s: %w", remoteAddress, err))
+				dnsMsg.err = errors.Join(dnsMsg.err, fmt.Errorf("failed to read from UDP from %s: %w", remoteAddress, err))
 				msgCh <- dnsMsg
 				return
 			}
 
 			if err := dnsMsg.msg.Unpack(buf[:bytesRead]); err != nil {
-				dnsMsg.err = errors.Join(dnsMsg.err, fmt.Errorf("can't unpack message: %w", err))
+				dnsMsg.err = errors.Join(dnsMsg.err, fmt.Errorf("failed to unpack message: %w", err))
 				msgCh <- dnsMsg
 				continue
 			}
@@ -69,6 +71,7 @@ func reader(ctx context.Context, conn *net.UDPConn) chan *dnsMsg {
 	return msgCh
 }
 
+// selectQuestion filters and selects questions with the given FQDN suffix.
 func selectQuestion(fqdn string, qs []dns.Question) (res []string) {
 	for _, q := range qs {
 		if strings.HasSuffix(q.Name, fqdn) {
@@ -79,13 +82,14 @@ func selectQuestion(fqdn string, qs []dns.Question) (res []string) {
 	return res
 }
 
+// runSubdomain starts listening for DNS messages, filters relevant questions, and publishes corresponding CNAMEs.
 func runSubdomain(ctx context.Context, publisher *avahi.Publisher, fqdn string, ttl uint32) error {
 	log.Printf("FQDN: %s", fqdn)
 
 	log.Println("Create connection to multicast")
 	conn, err := listen()
 	if err != nil {
-		return fmt.Errorf("can't create connection: %w", err)
+		return fmt.Errorf("failed to create connection: %w", err)
 	}
 
 	msgCh := reader(ctx, conn)
@@ -95,7 +99,7 @@ func runSubdomain(ctx context.Context, publisher *avahi.Publisher, fqdn string, 
 		fmt.Println() // Add new line after ^C
 		log.Println("Closing connection")
 		if err := conn.Close(); err != nil {
-			log.Printf("Can't close connection: %v", err)
+			log.Printf("Failed to close connection: %v", err)
 		}
 	}()
 
@@ -111,7 +115,7 @@ func runSubdomain(ctx context.Context, publisher *avahi.Publisher, fqdn string, 
 
 		if len(found) > 0 {
 			if err := publisher.PublishCNAMES(found, ttl); err != nil {
-				log.Printf("Can't publish CNAMEs: %v", err)
+				log.Printf("Failed to publish CNAMEs: %v", err)
 				continue
 			}
 		}
@@ -128,12 +132,12 @@ func CmdSubdomain(ctx context.Context) *cli.Command {
 			&cli.UintFlag{
 				Name:    "ttl",
 				Value:   600,
-				EnvVars: []string{"CNAME_TTL"},
+				EnvVars: []string{"TTL"},
 				Usage:   "TTL of CNAME record in seconds",
 			},
 			&cli.StringFlag{
 				Name:        "fqdn",
-				EnvVars:     []string{"SUBDOMAIN_FQDN"},
+				EnvVars:     []string{"FQDN"},
 				Usage:       "FQDN which will be used for CNAME. If empty, will be used current FQDN",
 				DefaultText: "hostname.local.",
 			},
@@ -145,7 +149,7 @@ func CmdSubdomain(ctx context.Context) *cli.Command {
 			log.Println("Creating publisher")
 			publisher, err := avahi.NewPublisher()
 			if err != nil {
-				return fmt.Errorf("can't create publisher: %w", err)
+				return fmt.Errorf("failed to create publisher: %w", err)
 			}
 			defer publisher.Close()
 
