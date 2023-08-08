@@ -3,71 +3,30 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
 	"os"
 	"os/signal"
-	"time"
 
-	"github.com/grishy/go-avahi-cname/publisher"
-	"github.com/miekg/dns"
+	"github.com/carlmjohnson/versioninfo"
+	"github.com/grishy/go-avahi-cname/cmd"
+	"github.com/urfave/cli/v2"
 )
 
-const TTL = uint32(10 * 60) // in seconds
-
-func formatCname(hostnameFqdn string, cnames []string) []string {
-	log.Println("Formating CNAMEs:")
-
-	for i, cname := range cnames {
-		if !dns.IsFqdn(cname) {
-			cnames[i] = dns.Fqdn(cname + "." + hostnameFqdn)
-
-			log.Printf("  > '%s' (added current FQDN)", cnames[i])
-			continue
-		}
-
-		log.Printf("  > '%s'", cname)
-	}
-
-	return cnames
-}
-
-func publishing(ctx context.Context, publisher *publisher.Publisher, cnames []string) {
-	resendDuration := time.Duration(TTL/2) * time.Second
-	log.Printf("Publishing every %v and CNAME TTL=%ds.", resendDuration, TTL)
-
-	// To start publishing immediately
-	// https://github.com/golang/go/issues/17601
-	if err := publisher.PublishCNAMES(cnames, TTL); err != nil {
-		log.Fatalf("can't publish CNAMEs: %v", err)
-	}
-
-	for {
-		select {
-		case <-time.Tick(resendDuration):
-			if err := publisher.PublishCNAMES(cnames, TTL); err != nil {
-				log.Fatalf("can't publish CNAMEs: %v", err)
-			}
-		case <-ctx.Done():
-			fmt.Println()
-			log.Println("Closing publisher...")
-			if err := publisher.Close(); err != nil {
-				log.Fatalf("Can't close publisher: %v", err)
-			}
-			os.Exit(0)
-		}
-	}
-}
-
 func main() {
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, os.Kill)
 	defer stop()
 
-	log.Println("Creating publisher")
-	publisher, err := publisher.NewPublisher()
-	if err != nil {
-		log.Fatalf("Can't create publisher: %v", err)
+	app := &cli.App{
+		Name:    "go-avahi-cname",
+		Usage:   "A tool for publishing CNAME records with Avahi",
+		Version: versioninfo.Short(),
+		Commands: []*cli.Command{
+			cmd.CmdCname(ctx),
+			cmd.CmdSubdomain(ctx),
+		},
 	}
 
-	cnames := formatCname(publisher.Fqdn(), os.Args[1:])
-	publishing(ctx, publisher, cnames)
+	if err := app.Run(os.Args); err != nil {
+		fmt.Println("Error:")
+		fmt.Printf(" > %+v\n", err)
+	}
 }
