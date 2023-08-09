@@ -73,8 +73,9 @@ func reader(ctx context.Context, conn *net.UDPConn) chan *dnsMsg {
 
 // selectQuestion filters and selects questions with the given FQDN suffix.
 func selectQuestion(fqdn string, qs []dns.Question) (res []string) {
+	suffix := "." + fqdn
 	for _, q := range qs {
-		if strings.HasSuffix(q.Name, fqdn) {
+		if strings.HasSuffix(q.Name, suffix) {
 			res = append(res, q.Name)
 		}
 	}
