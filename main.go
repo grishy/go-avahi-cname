@@ -7,8 +7,9 @@ import (
 	"os/signal"
 
 	"github.com/carlmjohnson/versioninfo"
-	"github.com/grishy/go-avahi-cname/cmd"
 	"github.com/urfave/cli/v2"
+
+	"github.com/grishy/go-avahi-cname/cmd"
 )
 
 func main() {
@@ -20,8 +21,8 @@ func main() {
 		Usage:   "A tool for publishing CNAME records with Avahi",
 		Version: versioninfo.Short(),
 		Commands: []*cli.Command{
-			cmd.CmdCname(ctx),
-			cmd.CmdSubdomain(ctx),
+			cmd.Cname(ctx),
+			cmd.Subdomain(ctx),
 		},
 	}
 
