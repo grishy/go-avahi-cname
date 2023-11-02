@@ -13,7 +13,7 @@
 Forward all subdomains current to machine( `*.hostname.local` -> `hostname.local`)
 
 1. _Binary_ `./go-avahi-cname subdomain`
-2. _Docker_ `docker run -d --network host -v "/var/run/dbus/system_bus_socket:/var/run/dbus/system_bus_socket" ghcr.io/grishy/go-avahi-cname:v2.0.0`
+2. _Docker_ `docker run -d --network host -v "/var/run/dbus/system_bus_socket:/var/run/dbus/system_bus_socket" ghcr.io/grishy/go-avahi-cname:v2.0.2`
 
 # What is go-avahi-cname?
 
@@ -127,7 +127,7 @@ services:
     network_mode: host
     volumes:
       - "/var/run/dbus/system_bus_socket:/var/run/dbus/system_bus_socket"
-    image: "ghcr.io/grishy/go-avahi-cname:v2.0.0"
+    image: "ghcr.io/grishy/go-avahi-cname:v2.0.2"
 ```
 
 Ansible task to run the container:
@@ -136,7 +136,7 @@ Ansible task to run the container:
 - name: go-avahi-cname | Start container
   community.docker.docker_container:
     name: "go-avahi-cname"
-    image: "ghcr.io/grishy/go-avahi-cname:v2.0.0"
+    image: "ghcr.io/grishy/go-avahi-cname:v2.0.2"
     restart_policy: unless-stopped
     network_mode: host
     volumes:
