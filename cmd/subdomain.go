@@ -8,9 +8,10 @@ import (
 	"net"
 	"strings"
 
-	"github.com/grishy/go-avahi-cname/avahi"
 	"github.com/miekg/dns"
 	"github.com/urfave/cli/v2"
+
+	"github.com/grishy/go-avahi-cname/avahi"
 )
 
 type dnsMsg struct {
@@ -125,7 +126,7 @@ func runSubdomain(ctx context.Context, publisher *avahi.Publisher, fqdn string, 
 	return nil
 }
 
-func CmdSubdomain(ctx context.Context) *cli.Command {
+func Subdomain(ctx context.Context) *cli.Command {
 	return &cli.Command{
 		Name:  "subdomain",
 		Usage: "Listen for all queries and publish CNAMEs for subdomains",
