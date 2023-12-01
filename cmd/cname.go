@@ -6,9 +6,10 @@ import (
 	"log"
 	"time"
 
-	"github.com/grishy/go-avahi-cname/avahi"
 	"github.com/miekg/dns"
 	"github.com/urfave/cli/v2"
+
+	"github.com/grishy/go-avahi-cname/avahi"
 )
 
 // formatCname formats CNAMEs by ensuring they are fully qualified domain names (FQDNs).
@@ -66,7 +67,7 @@ func runCname(ctx context.Context, publisher *avahi.Publisher, cnames []string, 
 	return publishing(ctx, publisher, formattedCname, ttl, interval)
 }
 
-func CmdCname(ctx context.Context) *cli.Command {
+func Cname(ctx context.Context) *cli.Command {
 	return &cli.Command{
 		Name:  "cname",
 		Usage: "Announce CNAME records for host via avahi-daemon",

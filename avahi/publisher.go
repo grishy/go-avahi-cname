@@ -42,7 +42,7 @@ func NewPublisher() (*Publisher, error) {
 	fqdn := dns.Fqdn(avahiFqdn)
 
 	// RDATA: a variable length string of octets that describes the resource. CNAME in our case
-	// Plus 1 because it will add null byte at the end
+	// Plus 1 because it will add a null byte at the end.
 	rdataField := make([]byte, len(fqdn)+1)
 	_, err = dns.PackDomainName(fqdn, rdataField, 0, nil, false)
 	if err != nil {

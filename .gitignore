@@ -23,3 +23,6 @@ go.work
 # Build output
 /go-avahi-cname
 dist/
+
+# Idea
+.idea
