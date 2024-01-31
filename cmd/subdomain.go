@@ -117,8 +117,7 @@ func runSubdomain(ctx context.Context, publisher *avahi.Publisher, fqdn string, 
 
 		if len(found) > 0 {
 			if err := publisher.PublishCNAMES(found, ttl); err != nil {
-				log.Printf("Failed to publish CNAMEs: %v", err)
-				continue
+				return fmt.Errorf("failed to publish CNAMEs: %w", err)
 			}
 		}
 	}
