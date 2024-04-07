@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
 # STAGE 1: building the executable
-FROM docker.io/1.22.2-alpine3.19 as builder
+FROM docker.io/golang:1.22.2-alpine3.19 as builder
 WORKDIR /build
 
 COPY go.mod go.sum ./
