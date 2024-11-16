@@ -1,5 +1,6 @@
+# yaml-language-server: $schema=https://goreleaser.com/static/schema.json
 # https://github.com/goreleaser/goreleaser/pull/4391
-version: 1
+version: 2
 
 report_sizes: true
 
