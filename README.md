@@ -10,9 +10,10 @@
 
 ## TL;DR
 
-Redirect all "subdomains" to the machine( `*.hostname.local` -> `hostname.local`)
+Redirect all "subdomains" to the machine( `*.hostname.local` -> `hostname.local`)  
+Install:
 
-1. _Binary_ `./go-avahi-cname subdomain`
+1. _Binary_ `./go-avahi-cname subdomain` (download from [Releases](https://github.com/grishy/go-avahi-cname/releases))
 2. _Docker_ `docker run -d --network host -v "/var/run/dbus/system_bus_socket:/var/run/dbus/system_bus_socket" ghcr.io/grishy/go-avahi-cname:v2.0.6`
 
 # What is go-avahi-cname?
