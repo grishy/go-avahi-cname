@@ -1,5 +1,9 @@
+# go-avahi-cname
+
 <p align="center">
   <img src="./docs/logo_x3.png" width="350">
+   <br />
+   <strong>Status: </strong>Maintained
 </p>
 
 <p align="center">
@@ -8,13 +12,19 @@
   <img src="https://github.com/grishy/go-avahi-cname/actions/workflows/release.yml/badge.svg" alt="Build Status">
 </p>
 
-## TL;DR
+## TL;DR - How to start in subdomain mode
 
 Redirect all "subdomains" to the machine( `*.hostname.local` -> `hostname.local`)  
 Install:
 
-1. _Binary_ `./go-avahi-cname subdomain` (download from [Releases](https://github.com/grishy/go-avahi-cname/releases))
-2. _Docker_ `docker run -d --network host -v "/var/run/dbus/system_bus_socket:/var/run/dbus/system_bus_socket" ghcr.io/grishy/go-avahi-cname:v2.0.6`
+1. _Binary_ (download from [Releases](https://github.com/grishy/go-avahi-cname/releases))
+   ```
+   ./go-avahi-cname subdomain
+   ```
+2. _Docker_
+   ```bash
+   docker run -d --network host -v "/var/run/dbus/system_bus_socket:/var/run/dbus/system_bus_socket" ghcr.io/grishy/go-avahi-cname:v2.0.6
+   ```
 
 # What is go-avahi-cname?
 
