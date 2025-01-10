@@ -23,7 +23,7 @@ Install:
    ```
 2. _Docker_
    ```bash
-   docker run -d --network host -v "/var/run/dbus/system_bus_socket:/var/run/dbus/system_bus_socket" ghcr.io/grishy/go-avahi-cname:v2.0.6
+   docker run -d --network host -v "/var/run/dbus/system_bus_socket:/var/run/dbus/system_bus_socket" ghcr.io/grishy/go-avahi-cname:v2.1.0
    ```
 
 # What is go-avahi-cname?
@@ -58,7 +58,7 @@ NAME:
    go-avahi-cname subdomain - Listen for all queries and publish CNAMEs for subdomains
 
 USAGE:
-   go-avahi-cname subdomain [command options] [arguments...]
+   go-avahi-cname subdomain [command options]
 
 OPTIONS:
    --ttl value   TTL of CNAME record in seconds (default: 600) [$TTL]
@@ -80,7 +80,7 @@ NAME:
    go-avahi-cname cname - Announce CNAME records for host via avahi-daemon
 
 USAGE:
-   go-avahi-cname cname [command options] [arguments...]
+   go-avahi-cname cname [command options]
 
 OPTIONS:
    --ttl value       TTL of CNAME record in seconds. How long they will be valid. (default: 600) [$TTL]
@@ -96,14 +96,14 @@ For example, if your machine’s hostname is lab, you can run:
 
 ```plain
 > ./go-avahi-cname cname git photo.local. example.lab.local.
-2023/08/08 14:51:21 Creating publisher
-2023/08/08 14:51:21 Getting FQDN from Avahi
-2023/08/08 14:51:21 FQDN: lab.local.
-2023/08/08 14:51:21 Formatting CNAMEs:
-2023/08/08 14:51:21   > 'git.lab.local.' (added FQDN)
-2023/08/08 14:51:21   > 'photo.local.'
-2023/08/08 14:51:21   > 'example.lab.local.'
-2023/08/08 14:51:21 Publishing every 300s and CNAME TTL 600s
+18:08:55 INF creating publisher
+18:08:55 INF getting FQDN from Avahi
+18:08:55 INF running CNAME publisher fqdn=lab.local.
+18:08:55 INF formatting CNAMEs
+18:08:55 INF formatted CNAME cname=git.lab.local. note="added FQDN"
+18:08:55 INF formatted CNAME cname=photo.local.
+18:08:55 INF formatted CNAME cname=example.lab.local.
+18:08:55 INF publishing CNAMEs interval=300 ttl=600
 ```
 
 This will create three CNAME records pointing to your local host:
@@ -136,7 +136,7 @@ services:
     network_mode: host
     volumes:
       - "/var/run/dbus/system_bus_socket:/var/run/dbus/system_bus_socket"
-    image: "ghcr.io/grishy/go-avahi-cname:v2.0.6"
+    image: "ghcr.io/grishy/go-avahi-cname:v2.1.0"
 ```
 
 Ansible task to run the container:
@@ -145,11 +145,44 @@ Ansible task to run the container:
 - name: go-avahi-cname | Start container
   community.docker.docker_container:
     name: "go-avahi-cname"
-    image: "ghcr.io/grishy/go-avahi-cname:v2.0.6"
+    image: "ghcr.io/grishy/go-avahi-cname:v2.1.0"
     restart_policy: unless-stopped
     network_mode: host
     volumes:
       - "/var/run/dbus/system_bus_socket:/var/run/dbus/system_bus_socket" # access to avahi-daemon
+```
+
+## Debugging
+
+If you have any problems, you can run the tool with the `--debug` flag to get more information about what is happening.
+NOTE: `--debug` flag is available for both modes and should be used before the subcommand.
+
+```bash
+# Start app with debug logs in subdomain mode
+./go-avahi-cname --debug subdomain
+```
+
+Also, you can use the `avahi-browse` tool to see the published records:
+
+```bash
+# List all services from the local network
+avahi-browse -a
+```
+
+Or monitor DBus messages between the tool and the Avahi daemon, e.g. of [issue #22](https://github.com/grishy/go-avahi-cname/issues/22)
+
+```bash
+# Monitor DBus messages for Avahi
+sudo busctl monitor org.freedesktop.Avahi
+```
+
+## Release
+
+Reminder for me, just create a tag and push it.
+
+```bash
+git tag -a v2.1.0 -m "Release v2.1.0"
+git push origin v2.1.0
 ```
 
 ## Source of inspiration
