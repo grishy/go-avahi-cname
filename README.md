@@ -182,7 +182,7 @@ Reminder for me, just create a tag and push it.
 
 ```bash
 git tag -a v2.1.0 -m "Release v2.1.0"
-git push origin v2.1.0
+git push origin tag v2.1.0
 ```
 
 ## Source of inspiration
