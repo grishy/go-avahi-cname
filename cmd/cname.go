@@ -3,7 +3,7 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"log"
+	"log/slog"
 	"time"
 
 	"github.com/miekg/dns"
@@ -14,16 +14,16 @@ import (
 
 // formatCname formats CNAMEs by ensuring they are fully qualified domain names (FQDNs).
 func formatCname(hostnameFqdn string, cnames []string) []string {
-	log.Println("Formatting CNAMEs:")
+	slog.Info("formatting CNAMEs")
 
 	formattedCnames := make([]string, len(cnames))
 	for i, cname := range cnames {
 		if !dns.IsFqdn(cname) {
 			formattedCnames[i] = dns.Fqdn(cname + "." + hostnameFqdn)
-			log.Printf("  > '%s' (added FQDN)", formattedCnames[i])
+			slog.Info("formatted CNAME", "cname", formattedCnames[i], "note", "added FQDN")
 		} else {
 			formattedCnames[i] = cname
-			log.Printf("  > '%s'", cname)
+			slog.Info("formatted CNAME", "cname", cname)
 		}
 	}
 
@@ -32,7 +32,7 @@ func formatCname(hostnameFqdn string, cnames []string) []string {
 
 // publishLoop handles the continuous publishing of CNAME records.
 func publishing(ctx context.Context, publisher *avahi.Publisher, cnames []string, ttl, interval uint32) error {
-	log.Printf("Publishing every %ds and CNAME TTL %ds", interval, ttl)
+	slog.Info("publishing CNAMEs", "interval", interval, "ttl", ttl)
 
 	resendDuration := time.Duration(interval) * time.Second
 	ticker := time.NewTicker(resendDuration)
@@ -52,7 +52,7 @@ func publishing(ctx context.Context, publisher *avahi.Publisher, cnames []string
 			}
 		case <-ctx.Done():
 			fmt.Println() // Add new line after ^C
-			log.Println("Closing publisher")
+			slog.Info("closing publisher")
 			publisher.Close()
 			return nil
 		}
@@ -61,7 +61,7 @@ func publishing(ctx context.Context, publisher *avahi.Publisher, cnames []string
 
 // runCname sets up and starts the CNAME publishing process.
 func runCname(ctx context.Context, publisher *avahi.Publisher, cnames []string, fqdn string, ttl, interval uint32) error {
-	log.Printf("FQDN: %s", fqdn)
+	slog.Info("running CNAME publisher", "fqdn", fqdn)
 
 	formattedCname := formatCname(fqdn, cnames)
 	return publishing(ctx, publisher, formattedCname, ttl, interval)
@@ -101,14 +101,14 @@ func Cname(ctx context.Context) *cli.Command {
 				return fmt.Errorf("at least one CNAME should be provided")
 			}
 
-			log.Println("Creating publisher")
+			slog.Info("creating publisher")
 			publisher, err := avahi.NewPublisher()
 			if err != nil {
 				return fmt.Errorf("failed to create publisher: %w", err)
 			}
 
 			if fqdn == "" {
-				log.Println("Getting FQDN from Avahi")
+				slog.Info("getting FQDN from Avahi")
 				fqdn = publisher.Fqdn()
 			}
 

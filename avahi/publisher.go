@@ -2,6 +2,7 @@ package avahi
 
 import (
 	"fmt"
+	"log/slog"
 
 	"github.com/godbus/dbus/v5"
 	"github.com/holoplot/go-avahi"
@@ -25,24 +26,27 @@ type Publisher struct {
 
 // NewPublisher creates a new service for Publisher.
 func NewPublisher() (*Publisher, error) {
+	slog.Debug("creating new publisher")
+
 	conn, err := dbus.SystemBus()
 	if err != nil {
-		return nil, fmt.Errorf("failed to connect to system bus: %v", err)
+		return nil, fmt.Errorf("failed to connect to system bus: %w", err)
 	}
 
 	server, err := avahi.ServerNew(conn)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create Avahi server: %v", err)
+		return nil, fmt.Errorf("failed to create Avahi server: %w", err)
 	}
 
 	avahiFqdn, err := server.GetHostNameFqdn()
 	if err != nil {
-		return nil, fmt.Errorf("failed to get FQDN from Avahi: %v", err)
+		return nil, fmt.Errorf("failed to get FQDN from Avahi: %w", err)
 	}
+	slog.Debug("got FQDN from Avahi", "fqdn", avahiFqdn)
 
 	group, err := server.EntryGroupNew()
 	if err != nil {
-		return nil, fmt.Errorf("failed to create entry group: %v", err)
+		return nil, fmt.Errorf("failed to create entry group: %w", err)
 	}
 
 	fqdn := dns.Fqdn(avahiFqdn)
@@ -52,9 +56,10 @@ func NewPublisher() (*Publisher, error) {
 	rdataField := make([]byte, len(fqdn)+1)
 	_, err = dns.PackDomainName(fqdn, rdataField, 0, nil, false)
 	if err != nil {
-		return nil, fmt.Errorf("failed to pack FQDN into RDATA: %v", err)
+		return nil, fmt.Errorf("failed to pack FQDN into RDATA: %w", err)
 	}
 
+	slog.Debug("publisher created successfully", "fqdn", fqdn)
 	return &Publisher{
 		dbusConn:        conn,
 		avahiServer:     server,
@@ -71,13 +76,16 @@ func (p *Publisher) Fqdn() string {
 
 // PublishCNAMES send via Avahi-daemon CNAME records with the provided TTL.
 func (p *Publisher) PublishCNAMES(cnames []string, ttl uint32) error {
+	slog.Debug("publishing CNAMEs", "count", len(cnames), "ttl", ttl)
+
 	// Reset the entry group to remove all records.
 	// Because we can't update records without it after the `Commit`.
 	if err := p.avahiEntryGroup.Reset(); err != nil {
-		return fmt.Errorf("failed to reset entry group: %v", err)
+		return fmt.Errorf("failed to reset entry group: %w", err)
 	}
 
 	for _, cname := range cnames {
+		slog.Debug("adding CNAME record", "cname", cname)
 		err := p.avahiEntryGroup.AddRecord(
 			avahi.InterfaceUnspec,
 			avahi.ProtoUnspec,
@@ -89,18 +97,20 @@ func (p *Publisher) PublishCNAMES(cnames []string, ttl uint32) error {
 			p.rdataField,
 		)
 		if err != nil {
-			return fmt.Errorf("failed to add record to entry group: %v", err)
+			return fmt.Errorf("failed to add record to entry group: %w", err)
 		}
 	}
 
 	if err := p.avahiEntryGroup.Commit(); err != nil {
-		return fmt.Errorf("failed to commit entry group: %v", err)
+		return fmt.Errorf("failed to commit entry group: %w", err)
 	}
 
+	slog.Debug("successfully published CNAMEs")
 	return nil
 }
 
 // Close associated resources.
 func (p *Publisher) Close() {
+	slog.Debug("closing publisher")
 	p.avahiServer.Close() // It also closes the DBus connection and free the entry group
 }
