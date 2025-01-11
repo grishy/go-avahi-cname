@@ -154,7 +154,7 @@ Ansible task to run the container:
 
 ## Debugging
 
-If you have any problems, you can run the tool with the `--debug` flag to get more information about what is happening.
+If you have any problems, you can run the tool with the `--debug` flag to get more information about what is happening.   
 NOTE: `--debug` flag is available for both modes and should be used before the subcommand.
 
 ```bash
