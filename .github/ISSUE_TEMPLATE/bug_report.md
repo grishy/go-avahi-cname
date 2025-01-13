@@ -7,31 +7,31 @@ assignees: grishy
 
 ---
 
-**Describe the bug**
-A clear and concise description of what the bug is.
+**Describe the Bug**  
+A clear and concise description of the bug.  
 
-**To Reproduce**
-Steps to reproduce the behavior:
-1. Start go-avahi-cname as '...'
-2. Send ping from '...'
-3. ...
+**To Reproduce**  
+Steps to reproduce the behavior:  
+1. Start `go-avahi-cname` as '...'  
+2. Send a ping from '...'  
+3. ...  
 
-**Server (with go-avahi-cname):**
- - OS and version:
- - go-avahi-cname version:
- - avahi version:
+**Server (with go-avahi-cname):**  
+- OS and version:  
+- Avahi version:  
+- go-avahi-cname version:  
 
-**Client (from where you send request):**
- - OS and version:
- - How mDNS configured: 
+**Client (from where you send the request):**  
+- OS and version:  
+- How mDNS is configured, is it build-in into OS:  
 
-**Network:**
-Describe topology of network and how Server and Client communicate.
+**Network:**  
+Describe the topology of the network and how the Server and Client communicate.  
 
-**go-avahi-cname log:**
-Start with `--debug` option and attach logs to the issue:
-(attach here)
+**go-avahi-cname Log:**  
+Start with the `--debug` option and attach logs to the issue:  
+(attach here)  
 
-**Network dump:**
-Like: `sudo tcpdump -n host 224.0.0.251 and port 5353 -w /tmp/dump.pcap`
-(attach here `/tmp/dump.pcap`)
+**Network Dump:**  
+Example: `sudo tcpdump -n host 224.0.0.251 and port 5353 -w /tmp/dump.pcap`  
+(attach here: `/tmp/dump.pcap`)
