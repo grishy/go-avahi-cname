@@ -9,6 +9,7 @@ assignees: grishy
 
 **Describe the Bug**  
 A clear and concise description of the bug.  
+Please, check already existing issues here - https://github.com/grishy/go-avahi-cname/issues?q=
 
 **To Reproduce**  
 Steps to reproduce the behavior:  
