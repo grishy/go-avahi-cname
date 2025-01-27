@@ -23,7 +23,7 @@ Install:
    ```
 2. _Docker_
    ```bash
-   docker run -d --network host -v "/var/run/dbus/system_bus_socket:/var/run/dbus/system_bus_socket" ghcr.io/grishy/go-avahi-cname:2.2.2
+   docker run -d --network host -v "/var/run/dbus/system_bus_socket:/var/run/dbus/system_bus_socket" ghcr.io/grishy/go-avahi-cname:2.2.3
    ```
 
 # What is go-avahi-cname?
@@ -136,7 +136,7 @@ services:
     network_mode: host
     volumes:
       - "/var/run/dbus/system_bus_socket:/var/run/dbus/system_bus_socket"
-    image: "ghcr.io/grishy/go-avahi-cname:2.2.2"
+    image: "ghcr.io/grishy/go-avahi-cname:2.2.3"
 ```
 
 Ansible task to run the container:
@@ -145,7 +145,7 @@ Ansible task to run the container:
 - name: go-avahi-cname | Start container
   community.docker.docker_container:
     name: "go-avahi-cname"
-    image: "ghcr.io/grishy/go-avahi-cname:2.2.2"
+    image: "ghcr.io/grishy/go-avahi-cname:2.2.3"
     restart_policy: unless-stopped
     network_mode: host
     volumes:
@@ -181,9 +181,9 @@ sudo busctl monitor org.freedesktop.Avahi
 Reminder for me, just create a tag and push it.
 
 ```bash
-# Replace v2.2.2 with the new version in project
-git tag -a v2.2.2 -m "Release v2.2.2"
-git push origin tag v2.2.2
+# Replace v2.2.3 with the new version in project
+git tag -a v2.2.3 -m "Release v2.2.3"
+git push origin tag v2.2.3
 ```
 
 ## Source of inspiration
