@@ -38,9 +38,9 @@ release:
   target_commitish: "{{ .Commit }}"
   mode: replace
   header: |
-    ## ℹ️ For information on how to install and use please see [README.md](https://github.com/grishy/go-avahi-cname)
+    ## ℹ️ For information on how to install and use, please see [README.md](https://github.com/grishy/go-avahi-cname)
   footer: |
-    Your PRs & issues are welcome! Thanks 😉
+    Your PRs and issues are welcome! Thanks 🙂
   disable: false
   skip_upload: false
 
