@@ -50,6 +50,9 @@ jobs:
           images: |
             ghcr.io/${{ github.repository }}
           tags: |
+            # set latest tag for default branch
+            type=raw,value=latest,enable={{is_default_branch}}
+            # set version tag from goreleaser
             type=raw,value=${{ fromJSON(steps.goreleaser.outputs.metadata).version }}
 
       - name: Build and push Docker images
