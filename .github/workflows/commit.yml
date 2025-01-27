@@ -9,14 +9,6 @@ permissions:
   contents: read
 
 jobs:
-  linter:
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
-        with:
-          go-version: "1.23.5"
-
   test:
     runs-on: ubuntu-24.04
     steps:
@@ -29,8 +21,7 @@ jobs:
 
       - run: go test -v ./...
 
-      - name: golangci-lint
-        uses: golangci/golangci-lint-action@v6
+      - uses: golangci/golangci-lint-action@v6
         with:
           version: v1.63.4
 
