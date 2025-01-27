@@ -9,33 +9,43 @@ permissions:
   contents: read
 
 jobs:
-  golangci:
-    runs-on: ubuntu-latest
+  linter:
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
-          go-version: "1.23.3"
-          cache: false
+          go-version: "1.23.5"
+
+  test:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.23.5"
+
+      - run: go mod verify
+
+      - run: go test -v ./...
 
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v6
         with:
-          version: v1.62.0
-  build_test:
-    runs-on: ubuntu-latest
+          version: v1.63.4
+
+  build:
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
-          go-version: "1.23.3"
-          cache: false
+          go-version: "1.23.5"
 
-      - name: Verify dependencies
-        run: go mod verify
-
-      - name: Build
-        run: go build -v ./...
-
-      - name: Test
-        run: go test -v ./...
+      - uses: goreleaser/goreleaser-action@v6
+        with:
+          distribution: goreleaser
+          version: "~> v2"
+          args: release --skip=publish --clean --snapshot
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
