@@ -23,7 +23,7 @@ Install:
    ```
 2. _Docker_
    ```bash
-   docker run -d --network host -v "/var/run/dbus/system_bus_socket:/var/run/dbus/system_bus_socket" ghcr.io/grishy/go-avahi-cname:v2.2.2
+   docker run -d --network host -v "/var/run/dbus/system_bus_socket:/var/run/dbus/system_bus_socket" ghcr.io/grishy/go-avahi-cname:2.2.2
    ```
 
 # What is go-avahi-cname?
@@ -136,7 +136,7 @@ services:
     network_mode: host
     volumes:
       - "/var/run/dbus/system_bus_socket:/var/run/dbus/system_bus_socket"
-    image: "ghcr.io/grishy/go-avahi-cname:v2.2.2"
+    image: "ghcr.io/grishy/go-avahi-cname:2.2.2"
 ```
 
 Ansible task to run the container:
@@ -145,7 +145,7 @@ Ansible task to run the container:
 - name: go-avahi-cname | Start container
   community.docker.docker_container:
     name: "go-avahi-cname"
-    image: "ghcr.io/grishy/go-avahi-cname:v2.2.2"
+    image: "ghcr.io/grishy/go-avahi-cname:2.2.2"
     restart_policy: unless-stopped
     network_mode: host
     volumes:
