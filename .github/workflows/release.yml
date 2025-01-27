@@ -50,8 +50,8 @@ jobs:
           images: |
             ghcr.io/${{ github.repository }}
           tags: |
-            # set latest tag for default branch
-            type=raw,value=latest,enable={{is_default_branch}}
+            # set latest tag for release
+            type=raw,value=latest
             # set version tag from goreleaser
             type=raw,value=${{ fromJSON(steps.goreleaser.outputs.metadata).version }}
 
