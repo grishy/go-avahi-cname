@@ -52,7 +52,7 @@ jobs:
           tags: |
             type=raw,value=${{ fromJSON(steps.goreleaser.outputs.metadata).version }}
 
-      - name: Test build of Docker images
+      - name: Build and push Docker images
         uses: docker/build-push-action@v5
         with:
           context: .
