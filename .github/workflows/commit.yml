@@ -50,17 +50,14 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Debug Goreleaser Outputs
-        run: |
-          echo "All Goreleaser outputs:"
-          echo "${{ toJSON(steps.goreleaser.outputs) }}"
-
-      - name: Extract metadata (tags, labels) for Docker
+      - name: Extract metadata (tags, labels) for Docker base on Goreleaser
         id: meta
         uses: docker/metadata-action@v5
         with:
           images: |
             ghcr.io/${{ github.repository }}
+          tags: |
+            type=raw,value=${{ fromJSON(steps.goreleaser.outputs.metadata).version }}
 
       - name: Build and push Docker images
         uses: docker/build-push-action@v5
@@ -71,12 +68,11 @@ jobs:
             linux/amd64
             linux/arm64
             linux/arm/v7
-          # TODO: Use from goreleaser
-          tags: ${{ steps.goreleaser.outputs.metadata.tag }}
+          tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
-            VERSION=${{ steps.goreleaser.outputs.version }}
-            COMMIT=${{ github.sha }}
-            DATE=${{ github.event.repository.updated_at }}
+            VERSION=${{ fromJSON(steps.goreleaser.outputs.metadata).version }}
+            COMMIT=${{ fromJSON(steps.goreleaser.outputs.metadata).commit }}
+            DATE=${{ fromJSON(steps.goreleaser.outputs.metadata).date }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
