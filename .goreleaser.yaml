@@ -5,13 +5,16 @@ version: 2
 report_sizes: true
 
 builds:
-  # https://goreleaser.com/customization/build/
+  # https://goreleaser.com/customization/builds/go/
   - env:
       - CGO_ENABLED=0
     flags:
       - -trimpath
     ldflags:
       - -w -s
+      - -X main.version={{.Version}}
+      - -X main.commit={{.ShortCommit}}
+      - -X main.date={{.CommitDate}}
     goos:
       - linux
       - darwin
@@ -20,15 +23,11 @@ builds:
       - "amd64"
       - "arm"
       - "arm64"
-    goarm:
-      - "6"
-      - "7"
     mod_timestamp: "{{ .CommitTimestamp }}"
 
 archives:
   # https://goreleaser.com/customization/archive/
-  - format: tar.gz
-    name_template: "{{ .ProjectName }}_v{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}"
+  - formats: ["tar.gz"]
 
 checksum:
   # https://goreleaser.com/customization/checksum/
@@ -39,7 +38,7 @@ release:
   target_commitish: "{{ .Commit }}"
   mode: replace
   header: |
-    ## ℹ️ For information on how to install and use please see `README.md`
+    ## ℹ️ For information on how to install and use please see [README.md](https://github.com/grishy/go-avahi-cname)
   footer: |
     Your PRs & issues are welcome! Thanks 😉
   disable: false
@@ -48,3 +47,19 @@ release:
 changelog:
   # https://goreleaser.com/customization/changelog/
   sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^ci:"
+      - Merge pull request
+      - Merge branch
+  groups:
+    - title: "New Features"
+      regexp: "^.*feat[(\\w)]*:+.*$"
+      order: 0
+    - title: "Bug fixes"
+      regexp: "^.*fix[(\\w)]*:+.*$"
+      order: 1
+    - title: Others
+      order: 999

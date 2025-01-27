@@ -1,9 +1,9 @@
 module github.com/grishy/go-avahi-cname
 
-go 1.23.3
+go 1.23.5
 
 require (
-	github.com/earthboundkid/versioninfo/v2 v2.24.1
+	github.com/caarlos0/go-version v0.2.0
 	github.com/godbus/dbus/v5 v5.1.0
 	github.com/holoplot/go-avahi v1.0.1
 	github.com/lmittmann/tint v1.0.6
