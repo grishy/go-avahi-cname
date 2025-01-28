@@ -152,8 +152,8 @@ func Subdomain(ctx context.Context) *cli.Command {
 			&cli.StringFlag{
 				Name:        "fqdn",
 				EnvVars:     []string{"FQDN"},
-				Usage:       "FQDN which will be used for CNAME. If empty, will be used current FQDN",
-				DefaultText: "hostname.local.",
+				Usage:       "FQDN which will be used for CNAME. If empty, will be used current FQDN from Avahi",
+				DefaultText: "<hostname>.local.",
 			},
 		},
 		Action: func(cCtx *cli.Context) error {

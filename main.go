@@ -40,6 +40,9 @@ func main() {
 		fmt.Printf(" > %+v\n", err)
 		os.Exit(1)
 	}
+
+	// To avoid graceful shutdown timeout
+	os.Exit(0)
 }
 
 // run starts and configures the CLI application
@@ -70,7 +73,7 @@ Need help? Visit https://github.com/grishy/go-avahi-cname`,
 			&cli.BoolFlag{
 				Name:    "debug",
 				Aliases: []string{"d"},
-				Usage:   "Enable debug logging",
+				Usage:   "enable debug logging",
 				EnvVars: []string{"DEBUG"},
 				Value:   false,
 			},

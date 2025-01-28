@@ -82,13 +82,13 @@ func Cname(ctx context.Context) *cli.Command {
 				Name:    "interval",
 				Value:   300,
 				EnvVars: []string{"INTERVAL"},
-				Usage:   "Interval of publishing CNAME records in seconds. How often to send records to other machines.",
+				Usage:   "interval of publishing CNAME records in seconds. How often to send records to other machines.",
 			},
 			&cli.StringFlag{
 				Name:        "fqdn",
 				EnvVars:     []string{"FQDN"},
-				Usage:       "Where to redirect. If empty, the Avahi FQDN (current machine) will be used",
-				DefaultText: "hostname.local.",
+				Usage:       "where to redirect. If empty, the Avahi FQDN (current machine) will be used",
+				DefaultText: "<hostname>.local.",
 			},
 		},
 		Action: func(cCtx *cli.Context) error {
