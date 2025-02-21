@@ -1,6 +1,6 @@
 module github.com/grishy/go-avahi-cname
 
-go 1.23.5
+go 1.24.0
 
 require (
 	github.com/caarlos0/go-version v0.2.0
