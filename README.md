@@ -12,19 +12,23 @@
   <img src="https://github.com/grishy/go-avahi-cname/actions/workflows/release.yml/badge.svg" alt="Build Status">
 </p>
 
-## TL;DR - How to start in subdomain mode
+## TL;DR: How to Start in Subdomain Mode
 
-Redirect all "subdomains" to the machine( `*.hostname.local` -> `hostname.local`)  
-Install:
+Redirect all subdomains to the machine (`*.hostname.local` → `hostname.local`).
 
-1. _Binary_ (download from [Releases](https://github.com/grishy/go-avahi-cname/releases))
-   ```
+1. **Binary** (download from [Releases](https://github.com/grishy/go-avahi-cname/releases)):
+
+   ```bash
    ./go-avahi-cname subdomain
    ```
-2. _Docker_
+
+2. **Docker**:
+
    ```bash
    docker run -d --network host -v "/var/run/dbus/system_bus_socket:/var/run/dbus/system_bus_socket" ghcr.io/grishy/go-avahi-cname:2.2.4
    ```
+
+   _Note:_ If you [encounter issues](https://github.com/grishy/go-avahi-cname/issues/28) with AppArmor, check to add `--security-opt apparmor=unconfined` to the Docker command.
 
 # What is go-avahi-cname?
 
