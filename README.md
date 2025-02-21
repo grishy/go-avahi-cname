@@ -25,7 +25,7 @@ Redirect all subdomains to the machine (`*.hostname.local` → `hostname.local`)
 2. **Docker**:
 
    ```bash
-   docker run -d --network host -v "/var/run/dbus/system_bus_socket:/var/run/dbus/system_bus_socket" ghcr.io/grishy/go-avahi-cname:2.2.4
+   docker run -d --network host -v "/var/run/dbus/system_bus_socket:/var/run/dbus/system_bus_socket" ghcr.io/grishy/go-avahi-cname:2.2.5
    ```
 
    _Note:_ If you [encounter issues](https://github.com/grishy/go-avahi-cname/issues/28) with AppArmor, check to add `--security-opt apparmor=unconfined` to the Docker command.
@@ -140,7 +140,7 @@ services:
     network_mode: host
     volumes:
       - "/var/run/dbus/system_bus_socket:/var/run/dbus/system_bus_socket"
-    image: "ghcr.io/grishy/go-avahi-cname:2.2.4"
+    image: "ghcr.io/grishy/go-avahi-cname:2.2.5"
 ```
 
 Ansible task to run the container:
@@ -149,7 +149,7 @@ Ansible task to run the container:
 - name: go-avahi-cname | Start container
   community.docker.docker_container:
     name: "go-avahi-cname"
-    image: "ghcr.io/grishy/go-avahi-cname:2.2.4"
+    image: "ghcr.io/grishy/go-avahi-cname:2.2.5"
     restart_policy: unless-stopped
     network_mode: host
     volumes:
@@ -185,9 +185,9 @@ sudo busctl monitor org.freedesktop.Avahi
 Reminder for me, just create a tag and push it.
 
 ```bash
-# Replace 2.2.4 with the new version in project
-git tag -a v2.2.4 -m "Release v2.2.4"
-git push origin tag v2.2.4
+# Replace 2.2.5 with the new version in project
+git tag -a v2.2.5 -m "Release v2.2.5"
+git push origin tag v2.2.5
 ```
 
 ## Source of inspiration
