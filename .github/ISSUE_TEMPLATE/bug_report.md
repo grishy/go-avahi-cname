@@ -34,5 +34,5 @@ Start with the `--debug` option and attach logs to the issue:
 (attach here)  
 
 **Network Dump:**  
-Example: `sudo tcpdump -i any udp port 5353 -w mdns_capture.pcap`  
-(attach here: `/tmp/dump.pcap`)
+Example: `sudo tcpdump -i any udp port 5353 -w /tmp/mdns_capture.pcap`  
+(attach here: `/tmp/mdns_capture.pcap`)
