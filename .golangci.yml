@@ -51,7 +51,7 @@ formatters:
   settings:
     goimports:
       local-prefixes:
-        - github.com/qm-labs/admin
+        - github.com/grishy/go-avahi-cname
 
     golines:
       max-len: 120

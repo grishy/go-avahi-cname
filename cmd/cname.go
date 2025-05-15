@@ -60,7 +60,13 @@ func publishing(ctx context.Context, publisher *avahi.Publisher, cnames []string
 }
 
 // runCname sets up and starts the CNAME publishing process.
-func runCname(ctx context.Context, publisher *avahi.Publisher, cnames []string, fqdn string, ttl, interval uint32) error {
+func runCname(
+	ctx context.Context,
+	publisher *avahi.Publisher,
+	cnames []string,
+	fqdn string,
+	ttl, interval uint32,
+) error {
 	slog.Info("running CNAME publisher", "fqdn", fqdn)
 
 	formattedCname := formatCname(fqdn, cnames)

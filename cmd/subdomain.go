@@ -57,7 +57,10 @@ func reader(ctx context.Context, conn *net.UDPConn) chan *dnsMsg {
 					return
 				}
 
-				dnsMsg.err = errors.Join(dnsMsg.err, fmt.Errorf("failed to read from UDP from %s: %w", remoteAddress, err))
+				dnsMsg.err = errors.Join(
+					dnsMsg.err,
+					fmt.Errorf("failed to read from UDP from %s: %w", remoteAddress, err),
+				)
 				msgCh <- dnsMsg
 				return
 			}
