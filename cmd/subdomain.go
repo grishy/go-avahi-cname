@@ -160,7 +160,13 @@ func Subdomain(ctx context.Context) *cli.Command {
 			},
 		},
 		Action: func(cCtx *cli.Context) error {
-			ttl := uint32(cCtx.Uint("ttl"))
+			ttlUint := cCtx.Uint("ttl")
+			maxUint32 := uint64(^uint32(0))
+			if uint64(ttlUint) > maxUint32 {
+				return fmt.Errorf("ttl value too large: %d (max allowed: %d)", ttlUint, maxUint32)
+			}
+			//nolint:gosec // safe: checked for overflow above
+			ttl := uint32(ttlUint)
 			fqdn := cCtx.String("fqdn")
 
 			slog.Info("creating publisher")
