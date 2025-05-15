@@ -47,11 +47,9 @@ formatters:
     - goimports
     - golines
     - gofumpt
-
   settings:
     goimports:
       local-prefixes:
         - github.com/grishy/go-avahi-cname
-
     golines:
       max-len: 120
