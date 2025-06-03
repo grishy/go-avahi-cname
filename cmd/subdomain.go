@@ -44,6 +44,7 @@ func reader(ctx context.Context, conn *net.UDPConn) chan *dnsMsg {
 	msgCh := make(chan *dnsMsg)
 
 	go func() {
+		defer close(msgCh)
 		for {
 			dnsMsg := &dnsMsg{
 				msg: dns.Msg{},
@@ -53,7 +54,6 @@ func reader(ctx context.Context, conn *net.UDPConn) chan *dnsMsg {
 			if err != nil {
 				if ctx.Err() != nil {
 					slog.Info("closing reader")
-					close(msgCh)
 					return
 				}
 
