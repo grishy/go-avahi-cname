@@ -131,7 +131,7 @@ Binary files can be taken as artifacts for [the Release](https://github.com/gris
 The images for each version are in [the Packages section](https://github.com/grishy/go-avahi-cname/pkgs/container/go-avahi-cname).  
 You need to provide the `/var/run/dbus/system_bus_socket` file to the container to be able to communicate with the host's Avahi daemon.
 
-Docker Composer example:
+Docker Compose example:
 
 ```yaml
 version: "3.3"
