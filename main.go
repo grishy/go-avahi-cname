@@ -30,19 +30,22 @@ var (
 )
 
 func main() {
-	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
-	defer stop()
+	os.Exit(runMain())
+}
+
+func runMain() int {
+	ctx, _ := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 
 	go handleGracefulShutdown(ctx)
 
 	if err := run(ctx); err != nil {
 		fmt.Println("Error:")
 		fmt.Printf(" > %+v\n", err)
-		os.Exit(1)
+		return 1
 	}
 
 	// To avoid graceful shutdown timeout
-	os.Exit(0)
+	return 0
 }
 
 // run starts and configures the CLI application
@@ -94,10 +97,11 @@ func handleGracefulShutdown(ctx context.Context) {
 	slog.Info("initiating graceful shutdown...")
 
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), forceExitTimeout)
-	defer cancel()
 
 	// Wait for cleanup or timeout
 	<-shutdownCtx.Done()
+	cancel() // To make linter happy
+
 	if shutdownCtx.Err() == context.DeadlineExceeded {
 		slog.Error("failed to shutdown gracefully, forcing exit")
 		os.Exit(1)

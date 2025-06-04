@@ -1,2 +1,55 @@
-run:
-  timeout: 5m
+# Inspired by Golden config for golangci-lint
+# Based on https://gist.github.com/maratori/47a4d00457a92aa426dbd48a18776322
+
+version: "2"
+linters:
+  default: none
+  enable:
+    - asciicheck
+    - bodyclose
+    - copyloopvar
+    - dupl
+    - errcheck
+    - gocritic
+    - gocyclo
+    - gosec
+    - govet
+    - ineffassign
+    - misspell
+    - nakedret
+    - noctx
+    - prealloc
+    - staticcheck
+    - unconvert
+    - unparam
+    - unused
+  settings:
+    goconst:
+      min-len: 2
+      min-occurrences: 2
+    gocritic:
+      enabled-tags:
+        - diagnostic
+        - style
+        - performance
+        - experimental
+        - opinionated
+    govet:
+      enable:
+        - shadow
+    lll:
+      line-length: 120
+    misspell:
+      locale: US
+
+formatters:
+  enable:
+    - goimports
+    - golines
+    - gofumpt
+  settings:
+    goimports:
+      local-prefixes:
+        - github.com/grishy/go-avahi-cname
+    golines:
+      max-len: 120

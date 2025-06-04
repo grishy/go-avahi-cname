@@ -60,7 +60,13 @@ func publishing(ctx context.Context, publisher *avahi.Publisher, cnames []string
 }
 
 // runCname sets up and starts the CNAME publishing process.
-func runCname(ctx context.Context, publisher *avahi.Publisher, cnames []string, fqdn string, ttl, interval uint32) error {
+func runCname(
+	ctx context.Context,
+	publisher *avahi.Publisher,
+	cnames []string,
+	fqdn string,
+	ttl, interval uint32,
+) error {
 	slog.Info("running CNAME publisher", "fqdn", fqdn)
 
 	formattedCname := formatCname(fqdn, cnames)
@@ -92,8 +98,21 @@ func Cname(ctx context.Context) *cli.Command {
 			},
 		},
 		Action: func(cCtx *cli.Context) error {
-			ttl := uint32(cCtx.Uint("ttl"))
-			interval := uint32(cCtx.Uint("interval"))
+			ttlUint := cCtx.Uint("ttl")
+			maxUint32 := uint64(^uint32(0))
+			if uint64(ttlUint) > maxUint32 {
+				return fmt.Errorf("ttl value too large: %d (max allowed: %d)", ttlUint, maxUint32)
+			}
+			//nolint:gosec // safe: checked for overflow above
+			ttl := uint32(ttlUint)
+
+			intervalUint := cCtx.Uint("interval")
+			if uint64(intervalUint) > maxUint32 {
+				return fmt.Errorf("interval value too large: %d (max allowed: %d)", intervalUint, maxUint32)
+			}
+			//nolint:gosec // safe: checked for overflow above
+			interval := uint32(intervalUint)
+
 			fqdn := cCtx.String("fqdn")
 			cnames := cCtx.Args().Slice()
 
