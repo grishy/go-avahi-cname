@@ -149,11 +149,14 @@ Ansible task to run the container:
 - name: go-avahi-cname | Start container
   community.docker.docker_container:
     name: "go-avahi-cname"
-    image: "ghcr.io/grishy/go-avahi-cname:2.2.5"
+    image: "ghcr.io/grishy/go-avahi-cname:latest"
     restart_policy: unless-stopped
     network_mode: host
     volumes:
       - "/var/run/dbus/system_bus_socket:/var/run/dbus/system_bus_socket" # access to avahi-daemon
+    privileged: true # AppArmor will sometimes block
+    healthcheck:
+      disable: true # No healtcheck needed as CMD crashes if fails and docker will reload
 ```
 
 ## Debugging
