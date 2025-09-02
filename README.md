@@ -154,7 +154,8 @@ Ansible task to run the container:
     network_mode: host
     volumes:
       - "/var/run/dbus/system_bus_socket:/var/run/dbus/system_bus_socket" # access to avahi-daemon
-    privileged: true # AppArmor will sometimes block
+    security_opt:
+      - apparmor=unconfined
     healthcheck:
       disable: true # No healtcheck needed as CMD crashes if fails and docker will reload
 ```
