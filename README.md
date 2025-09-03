@@ -28,7 +28,12 @@ Redirect all subdomains to the machine (`*.hostname.local` → `hostname.local`)
    docker run -d --network host -v "/var/run/dbus/system_bus_socket:/var/run/dbus/system_bus_socket" ghcr.io/grishy/go-avahi-cname:2.2.5
    ```
 
-   _Note:_ If you [encounter issues](https://github.com/grishy/go-avahi-cname/issues/28) with AppArmor, check to add `--security-opt apparmor=unconfined` to the Docker command.
+   _Note:_ If you [encounter issues](https://github.com/grishy/go-avahi-cname/issues/28) with AppArmor, add `--security-opt apparmor=unconfined` to the Docker command or include the following in your Docker Compose file:
+
+   ```yaml
+   security_opt:
+     - apparmor=unconfined
+   ```
 
 # What is go-avahi-cname?
 
@@ -138,10 +143,14 @@ version: "3.3"
 services:
   go-avahi-cname:
     network_mode: host
+    security_opt:
+      - apparmor=unconfined # required if AppArmor restricts access
     volumes:
       - "/var/run/dbus/system_bus_socket:/var/run/dbus/system_bus_socket"
     image: "ghcr.io/grishy/go-avahi-cname:2.2.5"
 ```
+
+If AppArmor denies access, include the `security_opt` section as shown above.
 
 Ansible task to run the container:
 
@@ -152,6 +161,8 @@ Ansible task to run the container:
     image: "ghcr.io/grishy/go-avahi-cname:2.2.5"
     restart_policy: unless-stopped
     network_mode: host
+    security_opts:
+      - "apparmor=unconfined" # required if AppArmor restricts access
     volumes:
       - "/var/run/dbus/system_bus_socket:/var/run/dbus/system_bus_socket" # access to avahi-daemon
 ```
