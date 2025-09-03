@@ -27,7 +27,8 @@ jobs:
 
       - uses: golangci/golangci-lint-action@v8
         with:
-          version: v2.1
+          version: v2.2.1
+          install-mode: goinstall
 
   build:
     runs-on: ubuntu-24.04
