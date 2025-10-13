@@ -10,10 +10,10 @@ import (
 )
 
 const (
-	// https://github.com/lathiat/avahi/blob/v0.8/avahi-common/defs.h#L343
-	AVAHI_DNS_CLASS_IN = uint16(0x01)
-	// https://github.com/lathiat/avahi/blob/v0.8/avahi-common/defs.h#L331
-	AVAHI_DNS_TYPE_CNAME = uint16(0x05)
+	// AvahiDNSClassIn from  https://github.com/lathiat/avahi/blob/v0.8/avahi-common/defs.h#L343
+	AvahiDNSClassIn = uint16(0x01)
+	// AvahiDNSTypeCName from https://github.com/lathiat/avahi/blob/v0.8/avahi-common/defs.h#L331
+	AvahiDNSTypeCName = uint16(0x05)
 )
 
 type Publisher struct {
@@ -91,8 +91,8 @@ func (p *Publisher) PublishCNAMES(cnames []string, ttl uint32) error {
 			avahi.ProtoUnspec,
 			uint32(0), // From Avahi Python bindings https://gist.github.com/gdamjan/3168336#file-avahi-alias-py-L42
 			cname,
-			AVAHI_DNS_CLASS_IN,
-			AVAHI_DNS_TYPE_CNAME,
+			AvahiDNSClassIn,
+			AvahiDNSTypeCName,
 			ttl,
 			p.rdataField,
 		)

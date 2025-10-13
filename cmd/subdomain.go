@@ -66,8 +66,8 @@ func reader(ctx context.Context, conn *net.UDPConn) chan *dnsMsg {
 			}
 			slog.Debug("received UDP message", "bytes", bytesRead, "from", remoteAddress)
 
-			if err := dnsMsg.msg.Unpack(buf[:bytesRead]); err != nil {
-				dnsMsg.err = errors.Join(dnsMsg.err, fmt.Errorf("failed to unpack message: %w", err))
+			if unpackErr := dnsMsg.msg.Unpack(buf[:bytesRead]); unpackErr != nil {
+				dnsMsg.err = errors.Join(dnsMsg.err, fmt.Errorf("failed to unpack message: %w", unpackErr))
 				msgCh <- dnsMsg
 				continue
 			}
@@ -81,10 +81,11 @@ func reader(ctx context.Context, conn *net.UDPConn) chan *dnsMsg {
 }
 
 // selectQuestion filters and selects questions with the given FQDN suffix.
-func selectQuestion(fqdn string, qs []dns.Question) (res []string) {
+func selectQuestion(fqdn string, qs []dns.Question) []string {
 	suffix := strings.ToLower("." + fqdn)
 	slog.Debug("filtering DNS questions", "suffix", suffix, "questions", len(qs))
 
+	res := make([]string, 0, len(qs))
 	for _, q := range qs {
 		slog.Debug("processing question", "name", q.Name, "type", dns.TypeToString[q.Qtype])
 
@@ -114,8 +115,8 @@ func runSubdomain(ctx context.Context, publisher *avahi.Publisher, fqdn string, 
 		<-ctx.Done()
 		fmt.Println() // Add new line after ^C
 		slog.Info("closing connection")
-		if err := conn.Close(); err != nil {
-			slog.Error("failed to close connection", "error", err)
+		if closeErr := conn.Close(); closeErr != nil {
+			slog.Error("failed to close connection", "error", closeErr)
 		}
 	}()
 
@@ -132,8 +133,8 @@ func runSubdomain(ctx context.Context, publisher *avahi.Publisher, fqdn string, 
 
 		if len(found) > 0 {
 			slog.Debug("publishing matching CNAMEs", "count", len(found))
-			if err := publisher.PublishCNAMES(found, ttl); err != nil {
-				return fmt.Errorf("failed to publish CNAMEs: %w", err)
+			if publishErr := publisher.PublishCNAMES(found, ttl); publishErr != nil {
+				return fmt.Errorf("failed to publish CNAMEs: %w", publishErr)
 			}
 		}
 	}

@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"time"
@@ -117,7 +118,7 @@ func Cname(ctx context.Context) *cli.Command {
 			cnames := cCtx.Args().Slice()
 
 			if len(cnames) == 0 {
-				return fmt.Errorf("at least one CNAME should be provided")
+				return errors.New("at least one CNAME should be provided")
 			}
 
 			slog.Info("creating publisher")
