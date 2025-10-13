@@ -22,7 +22,7 @@ const (
 	appName          = "go-avahi-cname"
 )
 
-// Version information set during build
+// Version information set during build.
 var (
 	version = "dev"
 	commit  = "none"
@@ -48,9 +48,9 @@ func runMain() int {
 	return 0
 }
 
-// run starts and configures the CLI application
+// run starts and configures the CLI application.
 func run(ctx context.Context) error {
-	cli.VersionPrinter = func(c *cli.Context) {
+	cli.VersionPrinter = func(_ *cli.Context) {
 		fmt.Print(buildVersion().String())
 	}
 
@@ -61,7 +61,7 @@ func run(ctx context.Context) error {
 		Description: `A tool that helps you create local domain names for your computer by using the Avahi daemon.
 
 It works in two ways:
-1. Automatic mode (use 'subdomain' command): 
+1. Automatic mode (use 'subdomain' command):
    Any subdomain you try to use (like myapp.computer.local) will automatically point to your computer
 
 2. Manual mode (use 'cname' command):
@@ -91,7 +91,7 @@ Need help? Visit https://github.com/grishy/go-avahi-cname`,
 	return app.Run(os.Args)
 }
 
-// handleGracefulShutdown manages graceful shutdown with timeout
+// handleGracefulShutdown manages graceful shutdown with timeout.
 func handleGracefulShutdown(ctx context.Context) {
 	<-ctx.Done()
 	slog.Info("initiating graceful shutdown...")
@@ -108,7 +108,7 @@ func handleGracefulShutdown(ctx context.Context) {
 	}
 }
 
-// setupLogger configures the global structured logger with appropriate settings
+// setupLogger configures the global structured logger with appropriate settings.
 func setupLogger(c *cli.Context) error {
 	w := os.Stdout
 	level := slog.LevelInfo
@@ -127,7 +127,7 @@ func setupLogger(c *cli.Context) error {
 	return nil
 }
 
-// buildVersion constructs version information for the application
+// buildVersion constructs version information for the application.
 func buildVersion() goversion.Info {
 	return goversion.GetVersionInfo(
 		func(i *goversion.Info) {
