@@ -46,6 +46,10 @@ It is a simple and lightweight project that allows you to publish CNAME records 
 - **✅ Support x86_64 and ARM**
 - **✅ Install as binaries or containers**
 
+## Used By
+
+This project is used in production by [PlanktoScope](https://github.com/PlanktoScope/PlanktoScope) (scientific imaging platform), [openUC2](https://github.com/openUC2/rpi-imswitch-os) (open-source microscopy), and many other small personal projects.
+
 ## Modes of Operation
 
 - **Subdomain reply** - _I think you want this._ Listen to the traffic and if someone asks `*.hostname.local` (example: `name1.hostname.local`), we "redirect" to `hostname.local`.
