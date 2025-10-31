@@ -1,5 +1,3 @@
-# go-avahi-cname
-
 <p align="center">
   <img src="./docs/logo_x3.png" width="350">
    <br />
