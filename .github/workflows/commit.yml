@@ -13,6 +13,18 @@ permissions:
   contents: read
 
 jobs:
+  nix:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+      - uses: DeterminateSystems/determinate-nix-action@v3
+      - uses: DeterminateSystems/magic-nix-cache-action@v8
+      - uses: DeterminateSystems/flake-checker-action@v9
+
+      - run: nix flake check
+      - run: nix build
+      - run: nix fmt -- --check
+
   test:
     runs-on: ubuntu-24.04
     steps:
