@@ -26,3 +26,6 @@ dist/
 
 # Idea
 .idea
+
+# Nix
+result
