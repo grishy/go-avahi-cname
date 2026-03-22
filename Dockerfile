@@ -4,7 +4,7 @@
 # Need a lot of additional configuration to build multi-arch images
 
 # STAGE 1: building the executable
-FROM docker.io/golang:1.25.6-alpine3.23 AS builder
+FROM docker.io/golang:1.26.1-alpine3.23 AS builder
 WORKDIR /build
 
 ARG VERSION
