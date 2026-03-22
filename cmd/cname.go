@@ -104,14 +104,12 @@ func Cname(ctx context.Context) *cli.Command {
 			if uint64(ttlUint) > maxUint32 {
 				return fmt.Errorf("ttl value too large: %d (max allowed: %d)", ttlUint, maxUint32)
 			}
-			//nolint:gosec // safe: checked for overflow above
 			ttl := uint32(ttlUint)
 
 			intervalUint := cCtx.Uint("interval")
 			if uint64(intervalUint) > maxUint32 {
 				return fmt.Errorf("interval value too large: %d (max allowed: %d)", intervalUint, maxUint32)
 			}
-			//nolint:gosec // safe: checked for overflow above
 			interval := uint32(intervalUint)
 
 			fqdn := cCtx.String("fqdn")

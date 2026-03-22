@@ -20,13 +20,13 @@
       in
       {
         packages = {
-          default = pkgs.buildGoModule {
+          default = (pkgs.buildGoModule.override { go = pkgs.go_1_26; }) {
             pname = "go-avahi-cname";
             inherit version;
 
             src = ./.;
 
-            vendorHash = "sha256-Q7/EH/o1q7HQo81nMI7lIKgJ0OOo257OvuAIphSUZVI=";
+            vendorHash = "sha256-vbIHB9u9Ftwdw7rHnj6rkk/ABmESNvOgp0hixeWVnkI=";
 
             ldflags = [
               "-s"

@@ -5,8 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
-	"net"
 	"strings"
+	"time"
 
 	"github.com/miekg/dns"
 	"github.com/urfave/cli/v2"
@@ -14,134 +14,169 @@ import (
 	"github.com/grishy/go-avahi-cname/avahi"
 )
 
-type dnsMsg struct {
-	msg dns.Msg
-	err error
+const reconnectDelay = 5 * time.Second
+
+type subdomainPublisher interface {
+	PublishCNAMES(cnames []string, ttl uint32) error
 }
 
-// listen creates a UDP connection to multicast for listening to DNS messages.
-func listen() (*net.UDPConn, error) {
-	slog.Debug("creating multicast UDP connection", "ip", "224.0.0.251", "port", 5353)
-	addr := &net.UDPAddr{
-		IP:   net.ParseIP("224.0.0.251"),
-		Port: 5353,
+type subdomainFailureKind uint8
+
+const (
+	subdomainFailureListener subdomainFailureKind = iota + 1
+	subdomainFailurePublisher
+)
+
+type subdomainError struct {
+	kind  subdomainFailureKind
+	cause error
+}
+
+func (e *subdomainError) Error() string {
+	return e.cause.Error()
+}
+
+func (e *subdomainError) Unwrap() error {
+	return e.cause
+}
+
+type subdomainDeps struct {
+	listenAndServe func(context.Context, subdomainPublisher, string, uint32) error
+	reconnectDelay time.Duration
+}
+
+var defaultSubdomainDeps = subdomainDeps{
+	listenAndServe: listenAndServe,
+	reconnectDelay: reconnectDelay,
+}
+
+func listenerFailure(err error) error {
+	return &subdomainError{
+		kind:  subdomainFailureListener,
+		cause: err,
+	}
+}
+
+func publisherFailure(err error) error {
+	return &subdomainError{
+		kind:  subdomainFailurePublisher,
+		cause: err,
+	}
+}
+
+func isListenerFailure(err error) bool {
+	var failure *subdomainError
+	if !errors.As(err, &failure) {
+		return false
 	}
 
-	conn, err := net.ListenMulticastUDP("udp4", nil, addr)
-	if err != nil {
-		return nil, err
-	}
-
-	slog.Debug("multicast UDP connection created successfully")
-	return conn, nil
+	return failure.kind == subdomainFailureListener
 }
 
-// reader reads DNS messages from the UDP connection. Assume that context is canceled before closing the connection.
-func reader(ctx context.Context, conn *net.UDPConn) chan *dnsMsg {
-	slog.Debug("starting DNS message reader")
-	buf := make([]byte, 1500)
-
-	msgCh := make(chan *dnsMsg)
-
-	go func() {
-		defer close(msgCh)
-		for {
-			dnsMsg := &dnsMsg{
-				msg: dns.Msg{},
-			}
-
-			bytesRead, remoteAddress, err := conn.ReadFromUDP(buf)
-			if err != nil {
-				if ctx.Err() != nil {
-					slog.Info("closing reader")
-					return
-				}
-
-				dnsMsg.err = errors.Join(
-					dnsMsg.err,
-					fmt.Errorf("failed to read from UDP from %s: %w", remoteAddress, err),
-				)
-				msgCh <- dnsMsg
-				return
-			}
-			slog.Debug("received UDP message", "bytes", bytesRead, "from", remoteAddress)
-
-			if unpackErr := dnsMsg.msg.Unpack(buf[:bytesRead]); unpackErr != nil {
-				dnsMsg.err = errors.Join(dnsMsg.err, fmt.Errorf("failed to unpack message: %w", unpackErr))
-				msgCh <- dnsMsg
-				continue
-			}
-			slog.Debug("unpacked DNS message successfully")
-
-			msgCh <- dnsMsg
-		}
-	}()
-
-	return msgCh
-}
-
-// selectQuestion filters and selects questions with the given FQDN suffix.
-func selectQuestion(fqdn string, qs []dns.Question) []string {
+func matchingQuestionNames(fqdn string, questions []dns.Question) []string {
 	suffix := strings.ToLower("." + fqdn)
-	slog.Debug("filtering DNS questions", "suffix", suffix, "questions", len(qs))
+	names := make([]string, 0, len(questions))
 
-	res := make([]string, 0, len(qs))
-	for _, q := range qs {
-		slog.Debug("processing question", "name", q.Name, "type", dns.TypeToString[q.Qtype])
-
-		if strings.HasSuffix(strings.ToLower(q.Name), suffix) {
-			slog.Debug("found matching question", "name", q.Name, "type", dns.TypeToString[q.Qtype])
-			res = append(res, q.Name)
+	for _, question := range questions {
+		if strings.HasSuffix(strings.ToLower(question.Name), suffix) {
+			names = append(names, question.Name)
 		}
 	}
 
-	slog.Debug("filtered questions", "matches", len(res))
-	return res
+	return names
 }
 
-// runSubdomain starts listening for DNS messages, filters relevant questions, and publishes corresponding CNAMEs.
-func runSubdomain(ctx context.Context, publisher *avahi.Publisher, fqdn string, ttl uint32) error {
+func runSubdomain(ctx context.Context, publisher subdomainPublisher, fqdn string, ttl uint32) error {
+	return runSubdomainWith(ctx, publisher, fqdn, ttl, defaultSubdomainDeps)
+}
+
+func runSubdomainWith(
+	ctx context.Context,
+	publisher subdomainPublisher,
+	fqdn string,
+	ttl uint32,
+	deps subdomainDeps,
+) error {
 	slog.Info("running subdomain publisher", "fqdn", fqdn)
 
-	slog.Info("creating connection to multicast")
-	conn, err := listen()
-	if err != nil {
-		return fmt.Errorf("failed to create connection: %w", err)
-	}
-
-	msgCh := reader(ctx, conn)
-
-	go func() {
-		<-ctx.Done()
-		fmt.Println() // Add new line after ^C
-		slog.Info("closing connection")
-		if closeErr := conn.Close(); closeErr != nil {
-			slog.Error("failed to close connection", "error", closeErr)
+	for ctx.Err() == nil {
+		sessionErr := deps.listenAndServe(ctx, publisher, fqdn, ttl)
+		if sessionErr == nil {
+			return nil
 		}
-	}()
-
-	slog.Info("start listening")
-	for m := range msgCh {
-		msg := m.msg
-		if m.err != nil {
-			slog.Error("error processing message", "error", m.err)
-			continue
+		if !isListenerFailure(sessionErr) {
+			return sessionErr
 		}
-		slog.Debug("processing DNS message", "questions", len(msg.Question))
 
-		found := selectQuestion(fqdn, msg.Question)
+		slog.Warn("listener failed, reconnecting", "error", sessionErr, "delay", deps.reconnectDelay)
 
-		if len(found) > 0 {
-			slog.Debug("publishing matching CNAMEs", "count", len(found))
-			if publishErr := publisher.PublishCNAMES(found, ttl); publishErr != nil {
-				return fmt.Errorf("failed to publish CNAMEs: %w", publishErr)
-			}
+		select {
+		case <-time.After(deps.reconnectDelay):
+		case <-ctx.Done():
+			return nil
 		}
 	}
 
 	return nil
 }
 
+func listenAndServe(ctx context.Context, publisher subdomainPublisher, fqdn string, ttl uint32) error {
+	slog.Info("creating connection to multicast")
+
+	conn, pc, err := listen()
+	if err != nil {
+		return listenerFailure(fmt.Errorf("failed to create connection: %w", err))
+	}
+	defer conn.Close()
+
+	innerCtx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	context.AfterFunc(innerCtx, func() {
+		if ctx.Err() != nil {
+			fmt.Println()
+		}
+
+		slog.Info("closing connection")
+		if closeErr := conn.Close(); closeErr != nil {
+			slog.Debug("connection close error", "error", closeErr)
+		}
+	})
+
+	go periodicRejoin(innerCtx, pc)
+
+	slog.Info("start listening")
+
+	var lastErr error
+	for message := range reader(innerCtx, conn) {
+		if message.err != nil {
+			lastErr = message.err
+			slog.Error("error processing message", "error", message.err)
+			continue
+		}
+
+		names := matchingQuestionNames(fqdn, message.msg.Question)
+		if len(names) == 0 {
+			continue
+		}
+
+		slog.Debug("publishing matching CNAMEs", "count", len(names))
+		if publishErr := publisher.PublishCNAMES(names, ttl); publishErr != nil {
+			return publisherFailure(fmt.Errorf("failed to publish CNAMEs: %w", publishErr))
+		}
+	}
+
+	if ctx.Err() != nil {
+		return nil
+	}
+	if lastErr != nil {
+		return listenerFailure(fmt.Errorf("mDNS reader stopped unexpectedly: %w", lastErr))
+	}
+
+	return listenerFailure(errors.New("mDNS reader stopped unexpectedly"))
+}
+
+// Subdomain returns the CLI command for the subdomain publisher.
 func Subdomain(ctx context.Context) *cli.Command {
 	return &cli.Command{
 		Name:  "subdomain",
@@ -166,7 +201,7 @@ func Subdomain(ctx context.Context) *cli.Command {
 			if uint64(ttlUint) > maxUint32 {
 				return fmt.Errorf("ttl value too large: %d (max allowed: %d)", ttlUint, maxUint32)
 			}
-			//nolint:gosec // safe: checked for overflow above
+
 			ttl := uint32(ttlUint)
 			fqdn := cCtx.String("fqdn")
 
