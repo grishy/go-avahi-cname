@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net"
+	"syscall"
 	"time"
 
 	"github.com/miekg/dns"
@@ -38,8 +39,11 @@ func joinMulticastAllInterfaces(pc *ipv4.PacketConn) {
 		}
 
 		if joinErr := pc.JoinGroup(&iface, &net.UDPAddr{IP: net.ParseIP(mdnsIPv4Addr)}); joinErr != nil {
-			slog.Debug("failed to join multicast group on interface", "interface", iface.Name, "error", joinErr)
-			continue
+			// EADDRINUSE means we are already a member — count as success.
+			if !errors.Is(joinErr, syscall.EADDRINUSE) {
+				slog.Debug("failed to join multicast group on interface", "interface", iface.Name, "error", joinErr)
+				continue
+			}
 		}
 
 		joined++
