@@ -37,7 +37,7 @@ jobs:
 
       - run: go mod verify
 
-      - run: go test -v ./...
+      - run: go test -race -shuffle=on -count=1 -v ./...
 
       - uses: golangci/golangci-lint-action@v9
         with:

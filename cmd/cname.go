@@ -53,8 +53,6 @@ func publishing(ctx context.Context, publisher *avahi.Publisher, cnames []string
 			}
 		case <-ctx.Done():
 			fmt.Println() // Add new line after ^C
-			slog.Info("closing publisher")
-			publisher.Close()
 			return nil
 		}
 	}
@@ -124,6 +122,7 @@ func Cname(ctx context.Context) *cli.Command {
 			if err != nil {
 				return fmt.Errorf("failed to create publisher: %w", err)
 			}
+			defer publisher.Close()
 
 			if fqdn == "" {
 				slog.Info("getting FQDN from Avahi")

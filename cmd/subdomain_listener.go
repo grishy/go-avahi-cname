@@ -94,7 +94,7 @@ func listen() (*net.UDPConn, *ipv4.PacketConn, error) {
 
 func reader(ctx context.Context, conn *net.UDPConn) <-chan *dnsMsg {
 	buf := make([]byte, 1500)
-	msgCh := make(chan *dnsMsg)
+	msgCh := make(chan *dnsMsg, 1)
 
 	go func() {
 		defer close(msgCh)
