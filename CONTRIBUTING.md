@@ -66,8 +66,8 @@ Please include:
 2. Create and push a tag:
 
    ```bash
-   git tag -a v2.6.0 -m "Release v2.6.0"
-   git push origin v2.6.0
+   git tag -a v2.6.1 -m "Release v2.6.1"
+   git push origin v2.6.1
    ```
 
 3. GitHub Actions will:
