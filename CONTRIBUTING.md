@@ -99,14 +99,17 @@ Please include:
 
 1. Update version references in the project.
 
-2. Create and push a tag:
+2. Commit and push the changes. Wait for all CI jobs, including the Avahi
+   integration tests, to pass for that commit.
+
+3. Create and push a tag on the checked commit:
 
    ```bash
-   git tag -a v2.6.1 -m "Release v2.6.1"
-   git push origin v2.6.1
+   git tag -a v2.7.0 -m "Release v2.7.0"
+   git push origin v2.7.0
    ```
 
-3. GitHub Actions will:
+4. GitHub Actions will:
    - Build binaries for all platforms
    - Create a GitHub release
    - Push Docker images to GHCR
