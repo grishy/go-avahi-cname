@@ -44,6 +44,59 @@ jobs:
           version: v2.13.2
           args: --build-tags integration
 
+  integration:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+
+      - name: Build integration binaries
+        env:
+          CGO_ENABLED: "0"
+        run: |
+          go test -tags=integration -c -o "$RUNNER_TEMP/publisher.test" ./avahi
+          go build -o "$RUNNER_TEMP/go-avahi-cname" .
+
+      - name: Build isolated Avahi environment
+        run: docker build -t cname-integration:local tests/integration
+
+      - name: Run Avahi and CLI integration tests
+        run: |
+          docker network create cname-integration
+          docker run --name cname-integration --network cname-integration \
+            --hostname cname-test \
+            -e AVAHI_TEST_BINARY=/go-avahi-cname \
+            -v "$RUNNER_TEMP/publisher.test:/publisher.test:ro" \
+            -v "$RUNNER_TEMP/go-avahi-cname:/go-avahi-cname:ro" \
+            cname-integration:local
+
+      - name: Collect failure diagnostics
+        if: failure()
+        run: |
+          if docker container inspect cname-integration > /dev/null 2>&1; then
+            mkdir -p "$RUNNER_TEMP/cname-results"
+            docker logs cname-integration > "$RUNNER_TEMP/cname-results/container.log" 2>&1
+            docker cp cname-integration:/results/. "$RUNNER_TEMP/cname-results/"
+          fi
+
+      - name: Upload failure diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: avahi-integration-diagnostics
+          path: ${{ runner.temp }}/cname-results
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Clean up integration environment
+        if: always()
+        run: |
+          docker rm -f cname-integration || true
+          docker network rm cname-integration || true
+
   build:
     runs-on: ubuntu-24.04
     steps:
