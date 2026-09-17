@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/miekg/dns"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 
 	"github.com/grishy/go-avahi-cname/avahi"
 )
@@ -177,7 +177,7 @@ func listenAndServe(ctx context.Context, publisher subdomainPublisher, fqdn stri
 }
 
 // Subdomain returns the CLI command for the subdomain publisher.
-func Subdomain(ctx context.Context) *cli.Command {
+func Subdomain() *cli.Command {
 	return &cli.Command{
 		Name:  "subdomain",
 		Usage: "Listen for all queries and publish CNAMEs for subdomains",
@@ -185,17 +185,17 @@ func Subdomain(ctx context.Context) *cli.Command {
 			&cli.UintFlag{
 				Name:    "ttl",
 				Value:   600,
-				EnvVars: []string{"TTL"},
+				Sources: cli.EnvVars("TTL"),
 				Usage:   "TTL of CNAME record in seconds",
 			},
 			&cli.StringFlag{
 				Name:        "fqdn",
-				EnvVars:     []string{"FQDN"},
+				Sources:     cli.EnvVars("FQDN"),
 				Usage:       "FQDN which will be used for CNAME. If empty, will be used current FQDN from Avahi",
 				DefaultText: "<hostname>.local.",
 			},
 		},
-		Action: func(cCtx *cli.Context) error {
+		Action: func(ctx context.Context, cCtx *cli.Command) error {
 			ttlUint := cCtx.Uint("ttl")
 			maxUint32 := uint64(^uint32(0))
 			if uint64(ttlUint) > maxUint32 {

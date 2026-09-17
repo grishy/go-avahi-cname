@@ -16,12 +16,12 @@ jobs:
   nix:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: DeterminateSystems/determinate-nix-action@v3
-      - uses: DeterminateSystems/magic-nix-cache-action@v13
+      - uses: DeterminateSystems/magic-nix-cache-action@v15
         with:
           use-flakehub: false
-      - uses: DeterminateSystems/flake-checker-action@v12
+      - uses: DeterminateSystems/flake-checker-action@v14
 
       - run: nix flake check
       - run: nix build
@@ -30,10 +30,10 @@ jobs:
   test:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-go@v6
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
         with:
-          go-version: "1.26.1"
+          go-version-file: go.mod
 
       - run: go mod verify
 
@@ -41,15 +41,16 @@ jobs:
 
       - uses: golangci/golangci-lint-action@v9
         with:
-          version: v2.11.3
+          version: v2.13.2
+          args: --build-tags integration
 
   build:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-go@v6
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
         with:
-          go-version: "1.26.1"
+          go-version-file: go.mod
 
       - name: Set up QEMU for cross-compilation of Docker images
         uses: docker/setup-qemu-action@v4
@@ -63,7 +64,7 @@ jobs:
         id: goreleaser
         with:
           distribution: goreleaser
-          version: "~> v2"
+          version: v2.18.2
           args: release --skip=publish --clean --snapshot
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

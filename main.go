@@ -12,7 +12,7 @@ import (
 	goversion "github.com/caarlos0/go-version"
 	"github.com/lmittmann/tint"
 	"github.com/mattn/go-isatty"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 
 	"github.com/grishy/go-avahi-cname/cmd"
 )
@@ -50,11 +50,15 @@ func runMain() int {
 
 // run starts and configures the CLI application.
 func run(ctx context.Context) error {
-	cli.VersionPrinter = func(_ *cli.Context) {
+	cli.VersionPrinter = func(_ *cli.Command) {
 		fmt.Print(buildVersion().String())
 	}
 
-	app := &cli.App{
+	return newCommand().Run(ctx, os.Args)
+}
+
+func newCommand() *cli.Command {
+	return &cli.Command{
 		Name:    appName,
 		Usage:   "Create local domain names using Avahi daemon",
 		Version: version,
@@ -68,27 +72,22 @@ It works in two ways:
    You can create your own domain names that point to your computer and keep them active
 
 Need help? Visit https://github.com/grishy/go-avahi-cname`,
-		Authors: []*cli.Author{{
-			Name:  "Sergei G.",
-			Email: "mail@grishy.dev",
-		}},
+		Authors: []any{"Sergei G. <mail@grishy.dev>"},
 		Flags: []cli.Flag{
 			&cli.BoolFlag{
 				Name:    "debug",
 				Aliases: []string{"d"},
 				Usage:   "enable debug logging",
-				EnvVars: []string{"DEBUG"},
+				Sources: cli.EnvVars("DEBUG"),
 				Value:   false,
 			},
 		},
 		Before: setupLogger,
 		Commands: []*cli.Command{
-			cmd.Cname(ctx),
-			cmd.Subdomain(ctx),
+			cmd.Cname(),
+			cmd.Subdomain(),
 		},
 	}
-
-	return app.Run(os.Args)
 }
 
 // handleGracefulShutdown manages graceful shutdown with timeout.
@@ -109,7 +108,7 @@ func handleGracefulShutdown(ctx context.Context) {
 }
 
 // setupLogger configures the global structured logger with appropriate settings.
-func setupLogger(c *cli.Context) error {
+func setupLogger(ctx context.Context, c *cli.Command) (context.Context, error) {
 	w := os.Stdout
 	level := slog.LevelInfo
 	if c.Bool("debug") {
@@ -117,14 +116,14 @@ func setupLogger(c *cli.Context) error {
 	}
 
 	slog.SetDefault(slog.New(
-		tint.NewHandler(w, &tint.Options{
+		tint.NewTextHandler(w, &tint.Options{
 			Level:      level,
 			NoColor:    !isatty.IsTerminal(w.Fd()),
 			TimeFormat: time.TimeOnly,
 		}),
 	))
 
-	return nil
+	return ctx, nil
 }
 
 // buildVersion constructs version information for the application.

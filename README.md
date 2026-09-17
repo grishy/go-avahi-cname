@@ -69,12 +69,15 @@ NAME:
    go-avahi-cname subdomain - Listen for all queries and publish CNAMEs for subdomains
 
 USAGE:
-   go-avahi-cname subdomain [command options]
+   go-avahi-cname subdomain [options]
 
 OPTIONS:
-   --ttl value   TTL of CNAME record in seconds (default: 600) [$TTL]
-   --fqdn value  FQDN which will be used for CNAME. If empty, will be used current FQDN (default: hostname.local.) [$FQDN]
-   --help, -h    show help
+   --ttl uint     TTL of CNAME record in seconds (default: 600) [$TTL]
+   --fqdn string  FQDN which will be used for CNAME. If empty, will be used current FQDN from Avahi (default: <hostname>.local.) [$FQDN]
+   --help, -h     show help
+
+GLOBAL OPTIONS:
+   --debug, -d  enable debug logging [$DEBUG]
 ```
 
 In this variant, we listen to the traffic with avahi-daemon for all questions with names and if they match ours, we send a command to avahi to answer it (send CNAME). The standard can be run without parameters, then we will resolve all requests that contain our hostname. For example, `git.lab.local` will be redirected to `lab.local`
@@ -96,19 +99,25 @@ NAME:
    go-avahi-cname cname - Announce CNAME records for host via avahi-daemon
 
 USAGE:
-   go-avahi-cname cname [command options]
+   go-avahi-cname cname [options]
 
 OPTIONS:
-   --ttl value       TTL of CNAME record in seconds. How long they will be valid. (default: 600) [$TTL]
-   --interval value  Interval for refreshing CNAME registrations in seconds. (default: 300) [$INTERVAL]
-   --fqdn value      Where to redirect. If empty, the Avahi FQDN (current machine) will be used (default: hostname.local.) [$FQDN]
-   --help, -h        show help
+   --ttl uint       TTL of CNAME record in seconds. How long they will be valid. (default: 600) [$TTL]
+   --interval uint  Interval for refreshing CNAME registrations in seconds. (default: 300) [$INTERVAL]
+   --fqdn string    where to redirect. If empty, the Avahi FQDN (current machine) will be used (default: <hostname>.local.) [$FQDN]
+   --help, -h       show help
+
+GLOBAL OPTIONS:
+   --debug, -d  enable debug logging [$DEBUG]
 ```
 
 Explicit CNAMEs stay registered until the process exits; they are not subject to
 the subdomain mode's 256-name retention limit. Avahi's configured resource limits
 still apply. `--interval` refreshes registrations without withdrawing them.
 You can use either just the name (`name1`), which will create a record as a subdomain for the current machine, or you can write the full FQDN (`name1.hostname.local.` domain with a dot on the end) format.
+
+Options can appear before or after names, for example `go-avahi-cname cname git --ttl 60`.
+Use `--` to stop option parsing explicitly.
 
 For example, if your machine’s hostname is lab, you can run:
 

@@ -41,9 +41,9 @@ From the repository root, with Docker running:
 
 ```sh
 # Use GOARCH=amd64 instead if your Docker engine runs on amd64.
-GOTOOLCHAIN=go1.26.1 GOOS=linux GOARCH=arm64 CGO_ENABLED=0 \
+GOTOOLCHAIN=go1.27.1 GOOS=linux GOARCH=arm64 CGO_ENABLED=0 \
   go test -tags=integration -c -o /tmp/cname-publisher.test ./avahi
-GOTOOLCHAIN=go1.26.1 GOOS=linux GOARCH=arm64 CGO_ENABLED=0 \
+GOTOOLCHAIN=go1.27.1 GOOS=linux GOARCH=arm64 CGO_ENABLED=0 \
   go build -o /tmp/cname-cli .
 
 docker build -t go-avahi-cname-integration:local tests/integration

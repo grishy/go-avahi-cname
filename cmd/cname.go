@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/miekg/dns"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 
 	"github.com/grishy/go-avahi-cname/avahi"
 )
@@ -72,7 +72,7 @@ func runCname(
 	return publishing(ctx, publisher, formattedCname, ttl, interval)
 }
 
-func Cname(ctx context.Context) *cli.Command {
+func Cname() *cli.Command {
 	return &cli.Command{
 		Name:  "cname",
 		Usage: "Announce CNAME records for host via avahi-daemon",
@@ -80,23 +80,23 @@ func Cname(ctx context.Context) *cli.Command {
 			&cli.UintFlag{
 				Name:    "ttl",
 				Value:   600,
-				EnvVars: []string{"TTL"},
+				Sources: cli.EnvVars("TTL"),
 				Usage:   "TTL of CNAME record in seconds. How long they will be valid.",
 			},
 			&cli.UintFlag{
 				Name:    "interval",
 				Value:   300,
-				EnvVars: []string{"INTERVAL"},
+				Sources: cli.EnvVars("INTERVAL"),
 				Usage:   "Interval for refreshing CNAME registrations in seconds.",
 			},
 			&cli.StringFlag{
 				Name:        "fqdn",
-				EnvVars:     []string{"FQDN"},
+				Sources:     cli.EnvVars("FQDN"),
 				Usage:       "where to redirect. If empty, the Avahi FQDN (current machine) will be used",
 				DefaultText: "<hostname>.local.",
 			},
 		},
-		Action: func(cCtx *cli.Context) error {
+		Action: func(ctx context.Context, cCtx *cli.Command) error {
 			ttlUint := cCtx.Uint("ttl")
 			maxUint32 := uint64(^uint32(0))
 			if uint64(ttlUint) > maxUint32 {
