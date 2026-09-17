@@ -1,11 +1,11 @@
 package avahi
 
 import (
+	"errors"
 	"fmt"
 	"log/slog"
 
 	"github.com/godbus/dbus/v5"
-	"github.com/holoplot/go-avahi"
 	"github.com/miekg/dns"
 )
 
@@ -14,58 +14,83 @@ const (
 	AvahiDNSClassIn = uint16(0x01)
 	// AvahiDNSTypeCName from https://github.com/lathiat/avahi/blob/v0.8/avahi-common/defs.h#L331
 	AvahiDNSTypeCName = uint16(0x05)
+
+	avahiService        = "org.freedesktop.Avahi"
+	serverInterface     = avahiService + ".Server"
+	entryGroupInterface = avahiService + ".EntryGroup"
+	publishUpdate       = uint32(64)
+	maxDynamicNames     = 256
 )
 
-type Publisher struct {
-	dbusConn        *dbus.Conn
-	avahiServer     *avahi.Server
-	avahiEntryGroup *avahi.EntryGroup
-	fqdn            string
-	rdataField      []byte
+type cnameRegistration struct {
+	group            dbus.BusObject
+	lastUsedSequence uint64
 }
 
-// NewPublisher creates a new service for Publisher.
+type Publisher struct {
+	busConn     *dbus.Conn
+	avahiServer dbus.BusObject
+
+	fqdn        string
+	targetRData []byte
+
+	registrations     map[string]cnameRegistration
+	registrationLimit int // Zero means registrations persist until Close.
+	useSequence       uint64
+}
+
+// NewPublisher keeps explicit CNAME registrations until Close.
 func NewPublisher() (*Publisher, error) {
+	return newPublisher(0)
+}
+
+// NewDynamicPublisher keeps the 256 most recently queried names registered.
+// Evicted names can be registered again when another query arrives.
+func NewDynamicPublisher() (*Publisher, error) {
+	return newPublisher(maxDynamicNames)
+}
+
+func newPublisher(registrationLimit int) (*Publisher, error) {
 	slog.Debug("creating new publisher")
 
-	conn, err := dbus.SystemBus()
+	// Own the connection: closing it also releases every Avahi registration.
+	// No signal subscription is needed for these synchronous D-Bus calls.
+	busConn, err := dbus.ConnectSystemBus()
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to system bus: %w", err)
 	}
 
-	server, err := avahi.ServerNew(conn)
+	avahiServer := busConn.Object(avahiService, "/")
+	var avahiFQDN string
+	err = avahiServer.Call(serverInterface+".GetHostNameFqdn", 0).Store(&avahiFQDN)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create Avahi server: %w", err)
-	}
-
-	avahiFqdn, err := server.GetHostNameFqdn()
-	if err != nil {
+		_ = busConn.Close()
 		return nil, fmt.Errorf("failed to get FQDN from Avahi: %w", err)
 	}
-	slog.Debug("got FQDN from Avahi", "fqdn", avahiFqdn)
+	slog.Debug("got FQDN from Avahi", "fqdn", avahiFQDN)
 
-	group, err := server.EntryGroupNew()
+	fqdn := dns.Fqdn(avahiFQDN)
+
+	// CNAME RDATA contains the target hostname in DNS wire format,
+	// including its terminating zero byte.
+	targetRData := make([]byte, len(fqdn)+1)
+	_, err = dns.PackDomainName(fqdn, targetRData, 0, nil, false)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create entry group: %w", err)
-	}
-
-	fqdn := dns.Fqdn(avahiFqdn)
-
-	// RDATA: a variable length string of octets that describes the resource. CNAME in our case
-	// Plus 1 because it will add a null byte at the end.
-	rdataField := make([]byte, len(fqdn)+1)
-	_, err = dns.PackDomainName(fqdn, rdataField, 0, nil, false)
-	if err != nil {
+		_ = busConn.Close()
 		return nil, fmt.Errorf("failed to pack FQDN into RDATA: %w", err)
 	}
 
 	slog.Debug("publisher created successfully", "fqdn", fqdn)
+
 	return &Publisher{
-		dbusConn:        conn,
-		avahiServer:     server,
-		avahiEntryGroup: group,
-		fqdn:            fqdn,
-		rdataField:      rdataField,
+		busConn:     busConn,
+		avahiServer: avahiServer,
+
+		fqdn:        fqdn,
+		targetRData: targetRData,
+
+		registrations:     make(map[string]cnameRegistration),
+		registrationLimit: registrationLimit,
 	}, nil
 }
 
@@ -74,43 +99,118 @@ func (p *Publisher) Fqdn() string {
 	return p.fqdn
 }
 
-// PublishCNAMES send via Avahi-daemon CNAME records with the provided TTL.
+// PublishCNAMES adds or updates CNAME records. Dynamic publishers evict the
+// least recently queried name at capacity; explicit registrations persist.
+// TTL controls client caching, not registration lifetime. Calls must be serial.
 func (p *Publisher) PublishCNAMES(cnames []string, ttl uint32) error {
 	slog.Debug("publishing CNAMEs", "count", len(cnames), "ttl", ttl)
 
-	// Reset the entry group to remove all records.
-	// Because we can't update records without it after the `Commit`.
-	if err := p.avahiEntryGroup.Reset(); err != nil {
-		return fmt.Errorf("failed to reset entry group: %w", err)
+	// Reject invalid input before it can evict a working registration.
+	if ttl == 0 {
+		return errors.New("CNAME TTL must be greater than zero")
 	}
 
 	for _, cname := range cnames {
-		slog.Debug("adding CNAME record", "cname", cname)
-		err := p.avahiEntryGroup.AddRecord(
-			avahi.InterfaceUnspec,
-			avahi.ProtoUnspec,
-			uint32(0), // From Avahi Python bindings https://gist.github.com/gdamjan/3168336#file-avahi-alias-py-L42
-			cname,
-			AvahiDNSClassIn,
-			AvahiDNSTypeCName,
-			ttl,
-			p.rdataField,
-		)
-		if err != nil {
-			return fmt.Errorf("failed to add record to entry group: %w", err)
+		if _, valid := dns.IsDomainName(cname); !valid {
+			return fmt.Errorf("invalid CNAME: %q", cname)
 		}
 	}
 
-	if err := p.avahiEntryGroup.Commit(); err != nil {
-		return fmt.Errorf("failed to commit entry group: %w", err)
+	for _, cname := range cnames {
+		if err := p.publishCNAME(cname, ttl); err != nil {
+			return err
+		}
 	}
 
-	slog.Debug("successfully published CNAMEs")
+	return nil
+}
+
+func (p *Publisher) publishCNAME(cname string, ttl uint32) error {
+	cname = dns.CanonicalName(cname)
+	registration, exists := p.registrations[cname]
+	flags := publishUpdate
+
+	if !exists {
+		if p.registrationLimit > 0 && len(p.registrations) >= p.registrationLimit {
+			if err := p.evictLeastRecentlyUsed(); err != nil {
+				return err
+			}
+		}
+
+		// A new name gets its own group so it cannot interrupt another
+		// name's registration. Reset/Commit on every query can starve Avahi.
+		var groupPath dbus.ObjectPath
+		if err := p.avahiServer.Call(serverInterface+".EntryGroupNew", 0).Store(&groupPath); err != nil {
+			return fmt.Errorf("failed to create entry group for %s: %w", cname, err)
+		}
+
+		registration.group = p.busConn.Object(avahiService, groupPath)
+		flags = 0
+	}
+
+	err := registration.group.Call(
+		entryGroupInterface+".AddRecord",
+		0,
+		int32(-1), // All interfaces.
+		int32(-1), // Both IP protocols.
+		flags,
+		cname,
+		AvahiDNSClassIn,
+		AvahiDNSTypeCName,
+		ttl,
+		p.targetRData,
+	).Err
+
+	if err == nil && !exists {
+		// UPDATE works without another Commit on an existing group.
+		err = registration.group.Call(entryGroupInterface+".Commit", 0).Err
+	}
+
+	if err != nil {
+		if !exists {
+			if freeErr := registration.group.Call(entryGroupInterface+".Free", 0).Err; freeErr != nil {
+				slog.Debug("failed to free rejected CNAME", "cname", cname, "error", freeErr)
+			}
+		}
+		return fmt.Errorf("failed to publish CNAME %s: %w", cname, err)
+	}
+
+	p.useSequence++
+	registration.lastUsedSequence = p.useSequence
+	p.registrations[cname] = registration
+
+	if !exists {
+		slog.Debug("registered CNAME", "cname", cname, "count", len(p.registrations))
+	}
+
+	return nil
+}
+
+func (p *Publisher) evictLeastRecentlyUsed() error {
+	// ponytail: scan at most 256 entries; use an LRU list only if this limit grows materially.
+	var oldestName string
+	for name, registration := range p.registrations {
+		if oldestName == "" || registration.lastUsedSequence < p.registrations[oldestName].lastUsedSequence {
+			oldestName = name
+		}
+	}
+
+	if err := p.registrations[oldestName].group.Call(entryGroupInterface+".Free", 0).Err; err != nil {
+		return fmt.Errorf("failed to evict CNAME %s: %w", oldestName, err)
+	}
+
+	delete(p.registrations, oldestName)
+	slog.Debug("evicted CNAME", "cname", oldestName, "count", len(p.registrations))
 	return nil
 }
 
 // Close associated resources.
 func (p *Publisher) Close() {
 	slog.Debug("closing publisher")
-	p.avahiServer.Close() // It also closes the DBus connection and free the entry group
+
+	if err := p.busConn.Close(); err != nil {
+		slog.Debug("failed to close D-Bus connection", "error", err)
+	}
+
+	clear(p.registrations)
 }

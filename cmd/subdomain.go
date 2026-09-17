@@ -206,7 +206,7 @@ func Subdomain(ctx context.Context) *cli.Command {
 			fqdn := cCtx.String("fqdn")
 
 			slog.Info("creating publisher")
-			publisher, err := avahi.NewPublisher()
+			publisher, err := avahi.NewDynamicPublisher()
 			if err != nil {
 				return fmt.Errorf("failed to create publisher: %w", err)
 			}

@@ -31,6 +31,42 @@ You need a Linux machine with Avahi daemon running.
 ping anything.yourhostname.local
 ```
 
+### Isolated integration tests
+
+These tests use real Avahi and D-Bus daemons in Docker, including multicast DNS
+and shutdown checks for both CLI modes. They are excluded from `go test ./...`
+by the `integration` build tag.
+
+From the repository root, with Docker running:
+
+```sh
+# Use GOARCH=amd64 instead if your Docker engine runs on amd64.
+GOTOOLCHAIN=go1.26.1 GOOS=linux GOARCH=arm64 CGO_ENABLED=0 \
+  go test -tags=integration -c -o /tmp/cname-publisher.test ./avahi
+GOTOOLCHAIN=go1.26.1 GOOS=linux GOARCH=arm64 CGO_ENABLED=0 \
+  go build -o /tmp/cname-cli .
+
+docker build -t go-avahi-cname-integration:local tests/integration
+docker network create cname-integration
+docker run --name cname-integration --network cname-integration \
+  --hostname cname-test \
+  -e AVAHI_TEST_BINARY=/go-avahi-cname \
+  -v /tmp/cname-publisher.test:/publisher.test:ro \
+  -v /tmp/cname-cli:/go-avahi-cname:ro \
+  go-avahi-cname-integration:local
+
+# Collect diagnostics even if the tests fail. Use a fresh destination per run.
+docker cp cname-integration:/results /tmp/cname-integration-results
+docker rm cname-integration
+docker network rm cname-integration
+docker image rm go-avahi-cname-integration:local
+rm /tmp/cname-publisher.test /tmp/cname-cli
+```
+
+Use the dedicated bridge network above: Docker `--internal` omits the route
+needed for multicast queries. Do not use host networking or mount the host's
+D-Bus socket. No host ports or writable repository mounts are needed.
+
 ## Code Style
 
 This project uses [golangci-lint](https://golangci-lint.run/) with a strict

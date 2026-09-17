@@ -5,7 +5,6 @@ go 1.26.1
 require (
 	github.com/caarlos0/go-version v0.2.2
 	github.com/godbus/dbus/v5 v5.2.2
-	github.com/holoplot/go-avahi v1.0.1
 	github.com/lmittmann/tint v1.1.3
 	github.com/mattn/go-isatty v0.0.20
 	github.com/miekg/dns v1.1.72

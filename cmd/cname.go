@@ -87,7 +87,7 @@ func Cname(ctx context.Context) *cli.Command {
 				Name:    "interval",
 				Value:   300,
 				EnvVars: []string{"INTERVAL"},
-				Usage:   "interval of publishing CNAME records in seconds. How often to send records to other machines.",
+				Usage:   "Interval for refreshing CNAME registrations in seconds.",
 			},
 			&cli.StringFlag{
 				Name:        "fqdn",

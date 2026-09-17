@@ -51,7 +51,7 @@ This project is used in production by [PlanktoScope](https://github.com/PlanktoS
 ## Modes of Operation
 
 - **Subdomain reply** - _I think you want this._ Listen to the traffic and if someone asks `*.hostname.local` (example: `name1.hostname.local`), we "redirect" to `hostname.local`.
-- **Interval publishing** - Periodically broadcasts CNAME records for various `name1.hostname.local`, `git.any.local`...
+- **Interval publishing** - Keeps CNAME records registered for various `name1.hostname.local`, `git.any.local`...
 
 ---
 
@@ -79,6 +79,11 @@ OPTIONS:
 
 In this variant, we listen to the traffic with avahi-daemon for all questions with names and if they match ours, we send a command to avahi to answer it (send CNAME). The standard can be run without parameters, then we will resolve all requests that contain our hostname. For example, `git.lab.local` will be redirected to `lab.local`
 
+Subdomain mode retains up to **256 recently queried names**. At capacity, a new
+name replaces the least recently queried registration. An evicted name can be
+registered again on its next query, which may introduce a short resolution delay.
+`--ttl` controls DNS client caching, not how long registrations are retained.
+
 ## Interval publishing of CNAME records
 
 ![Architecture](./docs/arch_cname.excalidraw.svg)
@@ -95,12 +100,14 @@ USAGE:
 
 OPTIONS:
    --ttl value       TTL of CNAME record in seconds. How long they will be valid. (default: 600) [$TTL]
-   --interval value  Interval of publishing CNAME records in seconds. How often to send records to other machines. (default: 300) [$INTERVAL]
+   --interval value  Interval for refreshing CNAME registrations in seconds. (default: 300) [$INTERVAL]
    --fqdn value      Where to redirect. If empty, the Avahi FQDN (current machine) will be used (default: hostname.local.) [$FQDN]
    --help, -h        show help
 ```
 
-You can specify any number of CNAMEs as arguments when running go-avahi-cname, with no length limit.
+Explicit CNAMEs stay registered until the process exits; they are not subject to
+the subdomain mode's 256-name retention limit. Avahi's configured resource limits
+still apply. `--interval` refreshes registrations without withdrawing them.
 You can use either just the name (`name1`), which will create a record as a subdomain for the current machine, or you can write the full FQDN (`name1.hostname.local.` domain with a dot on the end) format.
 
 For example, if your machine’s hostname is lab, you can run:
@@ -168,6 +175,10 @@ Ansible task to run the container:
     volumes:
       - "/var/run/dbus/system_bus_socket:/var/run/dbus/system_bus_socket" # access to avahi-daemon
 ```
+
+Listener failures are retried internally. Avahi/D-Bus publication failures exit
+with an error so a Docker restart policy or systemd `Restart=on-failure` can
+restart the process.
 
 ## Debugging
 
